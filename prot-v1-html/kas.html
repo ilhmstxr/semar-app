@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kas &amp; Penjualan - kas</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#225E26',
+              primary: '#2E7D32',
+              light: '#E8F5E9',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Pengaturan dasar mobile-first agar responsif dan rapi tanpa scroll horizontal */
+    html, body {
+      font-family: 'Inter', sans-serif;
+      background-color: #E5E7EB;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Hilangkan panah bawaan browser pada elemen select */
+    select.custom-select {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    /* Animasi transisi untuk bottom sheet modal */
+    .bottom-sheet-backdrop {
+      transition: opacity 0.25s ease;
+    }
+
+    .bottom-sheet-panel {
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Sembunyikan scrollbar bawaan di area konten */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex justify-center items-start sm:py-4">
+
+  <!-- Container Utama Mobile App -->
+  <div id="app-shell" class="w-full max-w-[430px] min-h-screen sm:min-h-[844px] sm:rounded-[32px] sm:shadow-2xl sm:border-[6px] sm:border-[#1E242B] bg-[#F4F6F5] flex flex-col relative overflow-hidden">
+
+    <!-- Top Status Bar (Sesuai desain: 19.10 & 4G) -->
+    <div class="bg-[#225E26] text-white px-5 pt-2.5 pb-1.5 flex items-center justify-between text-xs font-medium select-none">
+      <span id="status-time" class="tracking-tight">19.10</span>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[11px] font-semibold tracking-tight">4G</span>
+        <!-- Ikon Sinyal -->
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="2" y="14" width="3" height="6" rx="0.8"></rect>
+          <rect x="7" y="11" width="3" height="9" rx="0.8"></rect>
+          <rect x="12" y="7" width="3" height="13" rx="0.8"></rect>
+          <rect x="17" y="3" width="3" height="17" rx="0.8"></rect>
+        </svg>
+        <!-- Ikon Baterai -->
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 4h-2V2h-4v2H8C6.9 4 6 4.9 6 6v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"></path>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Header Hijau Utama -->
+    <header class="bg-[#2E7D32] text-white px-5 pt-2 pb-5 shadow-sm flex items-end justify-between">
+      <div>
+        <p class="text-[13px] text-white/90 leading-snug">Kas kelompok · November 2026</p>
+        <h1 class="text-[22px] font-bold tracking-tight leading-snug mt-0.5">
+          Kas &amp; Penjualan
+        </h1>
+      </div>
+
+      <!-- Tombol Mutasi / Pengeluaran (Muncul jika ada catatan pengeluaran baru) -->
+      <button
+        type="button"
+        id="expense-log-btn"
+        class="hidden text-xs font-semibold bg-white/15 hover:bg-white/25 active:scale-95 transition px-3 py-1.5 rounded-full text-white items-center gap-1.5"
+        title="Lihat catatan pengeluaran"
+      >
+        <span>Keluar</span>
+        <span id="expense-count" class="bg-white text-[#2E7D32] text-[11px] font-bold px-1.5 rounded-full">0</span>
+      </button>
+    </header>
+
+    <!-- Konten Utama (Scrollable) -->
+    <main class="flex-1 px-4 pt-3.5 pb-24 overflow-y-auto no-scrollbar space-y-3">
+
+      <!-- 1. Kartu Saldo Kas -->
+      <section
+        id="balance-card"
+        role="button"
+        tabindex="0"
+        title="Ketuk untuk melihat ringkasan arus kas bulan ini"
+        class="bg-white rounded-2xl px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 active:scale-[0.99] transition cursor-pointer"
+      >
+        <p class="text-[13.5px] text-[#4B5563] leading-snug">Saldo kas</p>
+        <p id="saldo-kas-val" class="text-[31px] font-bold text-[#2E7D32] tracking-tight leading-tight mt-0.5">
+          Rp212.500
+        </p>
+      </section>
+
+      <!-- 2. Kartu Pemasukan -->
+      <section class="bg-white rounded-2xl px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100">
+        <h2 class="text-[15px] font-bold text-[#1F2937] mb-2.5">Pemasukan</h2>
+        <div id="income-list" class="space-y-2 text-[13.5px]">
+          <!-- Daftar item pemasukan dirender oleh JavaScript -->
+        </div>
+      </section>
+
+      <!-- 3. Kartu Pembagian (aturan paguyuban) -->
+      <section
+        id="rules-card"
+        role="button"
+        tabindex="0"
+        title="Ketuk untuk simulasi pembagian saldo kas paguyuban"
+        class="bg-white rounded-2xl px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] border border-gray-100 hover:border-gray-200 active:scale-[0.99] transition cursor-pointer"
+      >
+        <h2 class="text-[15px] font-bold text-[#1F2937] mb-2.5">Pembagian (aturan paguyuban)</h2>
+        <div class="space-y-2 text-[13.5px]">
+          <div class="flex items-center justify-between">
+            <span class="text-[#374151]">1. Upah operator</span>
+            <span class="font-bold text-[#1F2937]">dibayar dulu</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[#374151]">2. Perawatan alat</span>
+            <span class="font-bold text-[#1F2937]">sisa</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-[#374151]">3. Cadangan kas</span>
+            <span class="font-bold text-[#1F2937]">sisa</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Tombol Aksi: + Catat penjualan / pengeluaran -->
+      <div class="pt-0.5">
+        <button
+          type="button"
+          id="open-tx-btn"
+          class="w-full bg-white border-[1.3px] border-[#43A047] text-[#2E7D32] hover:bg-[#E8F5E9] active:scale-[0.99] font-semibold text-[14px] py-3 px-4 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition"
+        >
+          + Catat penjualan / pengeluaran
+        </button>
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (5 Tab, Tab "Kas" Aktif Hijau) -->
+    <nav class="bg-white border-t border-gray-200 px-2 pt-2 pb-3 flex items-center justify-around sticky bottom-0 z-20 select-none" aria-label="Navigasi Utama">
+
+      <!-- Tab 1: Tong -->
+      <a href="status.html" data-tab="Tong" class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 10.5L12 3l9 7.5"></path>
+          <path d="M5 9.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.5"></path>
+        </svg>
+        <span class="text-[11px] leading-none">Tong</span>
+      </a>
+
+      <!-- Tab 2: Catat -->
+      <a href="catat.html" data-tab="Catat" class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/>
+        </svg>
+        <span class="text-[11px] leading-none">Catat</span>
+      </a>
+
+      <!-- Tab 3: Olah -->
+      <a href="olah.html" data-tab="Olah" class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
+          <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" />
+          <path d="m14 16-3 3 3 3" />
+          <path d="M8.293 13.596 7.196 9.5 3.1 10.598" />
+          <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" />
+          <path d="m13.378 9.633 4.096 1.098 1.097-4.096" />
+        </svg>
+        <span class="text-[11px] leading-none">Olah</span>
+      </a>
+
+      <!-- Tab 4: Kas (Aktif Hijau) -->
+      <a href="kas.html" data-tab="Kas" class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#2E7D32] font-semibold transition">
+        <span class="h-5 flex items-center justify-center text-[17px] font-extrabold tracking-tighter leading-none">Rp</span>
+        <span class="text-[11px] leading-none">Kas</span>
+      </a>
+
+      <!-- Tab 5: Dampak -->
+      <a href="dampak.html" data-tab="Dampak" class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 4h16v16H4V4zm3 4v2h10V8H7zm0 4v2h10v-2H7zm0 4v2h7v-2H7z"/>
+        </svg>
+        <span class="text-[11px] leading-none">Dampak</span>
+      </a>
+
+    </nav>
+
+    <!-- Toast Notification (Pengganti alert) -->
+    <div id="toast-box" class="pointer-events-none fixed sm:absolute bottom-20 left-1/2 -translate-x-1/2 z-40 opacity-0 transition-all duration-300 translate-y-2 w-[90%] max-w-[380px]">
+      <div id="toast-message" class="bg-gray-900/95 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-lg text-center">
+        Pesan notifikasi
+      </div>
+    </div>
+
+    <!-- Bottom Sheet Modal 1: + Catat penjualan / pengeluaran -->
+    <div id="tx-modal" class="hidden fixed sm:absolute inset-0 z-30 flex items-end justify-center">
+      <div id="tx-backdrop" class="bottom-sheet-backdrop absolute inset-0 bg-black/45 opacity-0"></div>
+      <div id="tx-panel" class="bottom-sheet-panel relative w-full bg-white rounded-t-3xl p-5 pb-7 shadow-2xl transform translate-y-full z-10">
+        <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+        <h2 class="text-base font-bold text-gray-900">Catat Penjualan / Pengeluaran</h2>
+        <p class="text-xs text-gray-500 mb-4">Tambahkan transaksi pemasukan penjualan atau pengeluaran kas paguyuban.</p>
+
+        <!-- Toggle Jenis Transaksi -->
+        <div class="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-xl mb-3.5">
+          <button type="button" id="type-income-btn" class="py-2 rounded-lg text-xs font-bold bg-white text-[#2E7D32] shadow-xs transition">
+            + Penjualan (Masuk)
+          </button>
+          <button type="button" id="type-expense-btn" class="py-2 rounded-lg text-xs font-semibold text-gray-600 transition">
+            - Pengeluaran (Keluar)
+          </button>
+        </div>
+
+        <div class="space-y-3 mb-5">
+          <div>
+            <label for="tx-label" class="block text-xs font-semibold text-gray-700 mb-1">Keterangan Item</label>
+            <input id="tx-label" type="text" placeholder="Contoh: Maggot segar 4 kg" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-[#2E7D32]" />
+          </div>
+
+          <div>
+            <label for="tx-amount" class="block text-xs font-semibold text-gray-700 mb-1">Nominal (Rp)</label>
+            <input id="tx-amount" type="text" inputmode="numeric" placeholder="Contoh: 28000" class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:border-[#2E7D32]" />
+          </div>
+        </div>
+
+        <div class="flex gap-2.5">
+          <button type="button" id="tx-cancel-btn" class="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+            Batal
+          </button>
+          <button type="button" id="tx-save-btn" class="flex-[1.5] py-3 px-4 rounded-xl bg-[#2E7D32] text-white font-semibold text-sm hover:bg-[#246627] transition">
+            Simpan Transaksi
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet Modal 2: Detail Simulasi Pembagian Paguyuban -->
+    <div id="rules-modal" class="hidden fixed sm:absolute inset-0 z-30 flex items-end justify-center">
+      <div id="rules-backdrop" class="bottom-sheet-backdrop absolute inset-0 bg-black/45 opacity-0"></div>
+      <div id="rules-panel" class="bottom-sheet-panel relative w-full bg-white rounded-t-3xl p-5 pb-7 shadow-2xl transform translate-y-full z-10">
+        <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+        <h2 class="text-base font-bold text-gray-900">Rincian Arus &amp; Aturan Paguyuban</h2>
+        <p class="text-xs text-gray-500 mb-4">Urutan prioritas pemakaian dana kas kelompok bulan November 2026.</p>
+
+        <div id="rules-summary-box" class="bg-gray-50 rounded-2xl p-4 space-y-2.5 mb-5 border border-gray-100 text-sm">
+          <!-- Diisi dinamis oleh JS -->
+        </div>
+
+        <button type="button" id="rules-close-btn" class="w-full py-3 px-4 rounded-xl bg-[#2E7D32] text-white font-semibold text-sm hover:bg-[#246627] transition">
+          Mengerti
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Sheet Modal 3: Daftar Pengeluaran -->
+    <div id="expense-modal" class="hidden fixed sm:absolute inset-0 z-30 flex items-end justify-center">
+      <div id="expense-backdrop" class="bottom-sheet-backdrop absolute inset-0 bg-black/45 opacity-0"></div>
+      <div id="expense-panel" class="bottom-sheet-panel relative w-full bg-white rounded-t-3xl p-5 pb-7 shadow-2xl transform translate-y-full z-10 max-h-[75%] flex flex-col">
+        <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4 shrink-0"></div>
+        <div class="flex items-center justify-between mb-3 shrink-0">
+          <div>
+            <h2 class="text-base font-bold text-gray-900">Catatan Pengeluaran Kas</h2>
+            <p class="text-xs text-gray-500">Daftar pengeluaran yang sudah dicatat</p>
+          </div>
+          <button type="button" id="expense-close-btn" class="text-xs font-semibold text-gray-600 px-2.5 py-1 rounded-lg bg-gray-100">Tutup</button>
+        </div>
+        <div id="expense-list" class="overflow-y-auto space-y-2.5 flex-1"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    /**
+     * State & Data Awal Halaman "Kas & Penjualan"
+     * Mencerminkan persis angka dan daftar item pada gambar referensi:
+     * Total pemasukan = 42.000 + 70.000 + 40.000 + 33.500 + 27.000 = Rp212.500
+     */
+    const kasState = {
+      incomes: [
+        { id: 1, label: 'Maggot segar 6 kg (lele)', amount: 42000 },
+        { id: 2, label: 'Maggot kering 2 kg', amount: 70000 },
+        { id: 3, label: 'Kasgot & kompos 20 kg', amount: 40000 },
+        { id: 4, label: 'Anorganik ke bank sampah', amount: 33500 },
+        { id: 5, label: 'Sayur', amount: 27000 }
+      ],
+      expenses: []
+    };
+
+    // Referensi Elemen DOM
+    const saldoKasValEl = document.getElementById('saldo-kas-val');
+    const incomeListEl = document.getElementById('income-list');
+    const toastBox = document.getElementById('toast-box');
+    const toastMessage = document.getElementById('toast-message');
+    let toastTimer = null;
+    let currentTxType = 'income'; // 'income' | 'expense'
+
+    /**
+     * Format angka menjadi Rupiah tanpa spasi setelah "Rp" (contoh: 212500 -> "Rp212.500")
+     */
+    function formatRupiah(num) {
+      const safeNum = Math.round(Number(num) || 0);
+      const formatted = Math.abs(safeNum).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return safeNum < 0 ? `-Rp${formatted}` : `Rp${formatted}`;
+    }
+
+    /**
+     * Parse input nominal Rupiah (menghapus titik/koma pemisah ribuan)
+     */
+    function parseRupiahInput(str) {
+      const digitsOnly = String(str).replace(/[^\d]/g, '');
+      const parsed = parseInt(digitsOnly, 10);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
+    /**
+     * Menampilkan pesan notifikasi toast halus di bagian bawah layar
+     */
+    function showToast(msg) {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastMessage.textContent = msg;
+      toastBox.classList.remove('opacity-0', 'translate-y-2');
+      toastBox.classList.add('opacity-100', 'translate-y-0');
+
+      toastTimer = setTimeout(() => {
+        toastBox.classList.remove('opacity-100', 'translate-y-0');
+        toastBox.classList.add('opacity-0', 'translate-y-2');
+      }, 2600);
+    }
+
+    /**
+     * Menghitung total pemasukan, total pengeluaran, dan saldo kas terkini
+     */
+    function calculateTotals() {
+      const totalIncome = kasState.incomes.reduce((acc, item) => acc + item.amount, 0);
+      const totalExpense = kasState.expenses.reduce((acc, item) => acc + item.amount, 0);
+      const balance = totalIncome - totalExpense;
+      return { totalIncome, totalExpense, balance };
+    }
+
+    /**
+     * Merender Saldo Kas dan Daftar Pemasukan
+     */
+    function renderKasPage() {
+      const { balance } = calculateTotals();
+      saldoKasValEl.textContent = formatRupiah(balance);
+
+      incomeListEl.innerHTML = kasState.incomes.map(item => `
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[#374151]">${item.label}</span>
+          <span class="font-bold text-[#1F2937] shrink-0">${formatRupiah(item.amount)}</span>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * Modal 1: + Catat penjualan / pengeluaran
+     */
+    const txModal = document.getElementById('tx-modal');
+    const txBackdrop = document.getElementById('tx-backdrop');
+    const txPanel = document.getElementById('tx-panel');
+    const typeIncomeBtn = document.getElementById('type-income-btn');
+    const typeExpenseBtn = document.getElementById('type-expense-btn');
+    const txLabelInput = document.getElementById('tx-label');
+    const txAmountInput = document.getElementById('tx-amount');
+    const expenseLogBtn = document.getElementById('expense-log-btn');
+    const expenseCountEl = document.getElementById('expense-count');
+
+    function setTxType(type) {
+      currentTxType = type;
+      if (type === 'income') {
+        typeIncomeBtn.className = 'py-2 rounded-lg text-xs font-bold bg-white text-[#2E7D32] shadow-xs transition';
+        typeExpenseBtn.className = 'py-2 rounded-lg text-xs font-semibold text-gray-600 transition';
+        txLabelInput.placeholder = 'Contoh: Maggot segar 4 kg';
+      } else {
+        typeExpenseBtn.className = 'py-2 rounded-lg text-xs font-bold bg-white text-[#DC2626] shadow-xs transition';
+        typeIncomeBtn.className = 'py-2 rounded-lg text-xs font-semibold text-gray-600 transition';
+        txLabelInput.placeholder = 'Contoh: Upah operator / Perawatan alat';
+      }
+    }
+
+    typeIncomeBtn.addEventListener('click', () => setTxType('income'));
+    typeExpenseBtn.addEventListener('click', () => setTxType('expense'));
+
+    function openTxModal() {
+      setTxType('income');
+      txLabelInput.value = '';
+      txAmountInput.value = '';
+      txModal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        txBackdrop.classList.remove('opacity-0');
+        txBackdrop.classList.add('opacity-100');
+        txPanel.classList.remove('translate-y-full');
+        txPanel.classList.add('translate-y-0');
+      });
+    }
+
+    function closeTxModal() {
+      txBackdrop.classList.remove('opacity-100');
+      txBackdrop.classList.add('opacity-0');
+      txPanel.classList.remove('translate-y-0');
+      txPanel.classList.add('translate-y-full');
+      setTimeout(() => {
+        txModal.classList.add('hidden');
+      }, 280);
+    }
+
+    document.getElementById('open-tx-btn').addEventListener('click', openTxModal);
+    document.getElementById('tx-cancel-btn').addEventListener('click', closeTxModal);
+    txBackdrop.addEventListener('click', closeTxModal);
+
+    document.getElementById('tx-save-btn').addEventListener('click', () => {
+      const label = txLabelInput.value.trim();
+      const amount = parseRupiahInput(txAmountInput.value);
+
+      if (!label) {
+        showToast('Masukkan keterangan item transaksi');
+        txLabelInput.focus();
+        return;
+      }
+      if (amount <= 0) {
+        showToast('Masukkan nominal Rupiah lebih dari 0');
+        txAmountInput.focus();
+        return;
+      }
+
+      if (currentTxType === 'income') {
+        kasState.incomes.push({
+          id: Date.now(),
+          label,
+          amount
+        });
+        showToast(`Penjualan "${label}" (${formatRupiah(amount)}) ditambahkan`);
+      } else {
+        const { balance } = calculateTotals();
+        if (amount > balance) {
+          showToast('Saldo kas tidak mencukupi untuk pengeluaran ini');
+          return;
+        }
+        kasState.expenses.unshift({
+          id: Date.now(),
+          label,
+          amount
+        });
+        expenseCountEl.textContent = kasState.expenses.length;
+        expenseLogBtn.classList.remove('hidden');
+        expenseLogBtn.classList.add('flex');
+        showToast(`Pengeluaran "${label}" (${formatRupiah(amount)}) dicatat`);
+      }
+
+      renderKasPage();
+      closeTxModal();
+    });
+
+    /**
+     * Modal 2: Ringkasan Arus Kas & Aturan Paguyuban
+     */
+    const rulesModal = document.getElementById('rules-modal');
+    const rulesBackdrop = document.getElementById('rules-backdrop');
+    const rulesPanel = document.getElementById('rules-panel');
+    const rulesSummaryBox = document.getElementById('rules-summary-box');
+
+    function openRulesModal() {
+      const { totalIncome, totalExpense, balance } = calculateTotals();
+      rulesSummaryBox.innerHTML = `
+        <div class="flex justify-between">
+          <span class="text-gray-500">Total Pemasukan</span>
+          <span class="font-bold text-[#2E7D32]">${formatRupiah(totalIncome)}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Total Pengeluaran</span>
+          <span class="font-bold text-[#DC2626]">${formatRupiah(totalExpense)}</span>
+        </div>
+        <div class="border-t border-gray-200 pt-2 flex justify-between">
+          <span class="font-semibold text-gray-800">Saldo Kas Tersedia</span>
+          <span class="font-bold text-gray-900">${formatRupiah(balance)}</span>
+        </div>
+        <div class="pt-1 text-xs text-gray-500 leading-relaxed">
+          Sesuai kesepakatan paguyuban, dana kas diprioritaskan untuk <strong>1. Upah operator</strong> terlebih dahulu, lalu sisanya dibagi ke <strong>2. Perawatan alat</strong> dan <strong>3. Cadangan kas</strong>.
+        </div>
+      `;
+
+      rulesModal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        rulesBackdrop.classList.remove('opacity-0');
+        rulesBackdrop.classList.add('opacity-100');
+        rulesPanel.classList.remove('translate-y-full');
+        rulesPanel.classList.add('translate-y-0');
+      });
+    }
+
+    function closeRulesModal() {
+      rulesBackdrop.classList.remove('opacity-100');
+      rulesBackdrop.classList.add('opacity-0');
+      rulesPanel.classList.remove('translate-y-0');
+      rulesPanel.classList.add('translate-y-full');
+      setTimeout(() => {
+        rulesModal.classList.add('hidden');
+      }, 280);
+    }
+
+    document.getElementById('balance-card').addEventListener('click', openRulesModal);
+    document.getElementById('rules-card').addEventListener('click', openRulesModal);
+    document.getElementById('rules-close-btn').addEventListener('click', closeRulesModal);
+    rulesBackdrop.addEventListener('click', closeRulesModal);
+
+    /**
+     * Modal 3: Daftar Pengeluaran
+     */
+    const expenseModal = document.getElementById('expense-modal');
+    const expenseBackdrop = document.getElementById('expense-backdrop');
+    const expensePanel = document.getElementById('expense-panel');
+    const expenseListEl = document.getElementById('expense-list');
+
+    function openExpenseModal() {
+      expenseListEl.innerHTML = kasState.expenses.map(item => `
+        <div class="bg-gray-50 border border-gray-200/80 rounded-2xl p-3.5 text-xs flex items-center justify-between">
+          <span class="font-semibold text-gray-800 text-sm">${item.label}</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-red-50 text-[#DC2626] font-bold">-${formatRupiah(item.amount)}</span>
+        </div>
+      `).join('');
+
+      expenseModal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        expenseBackdrop.classList.remove('opacity-0');
+        expenseBackdrop.classList.add('opacity-100');
+        expensePanel.classList.remove('translate-y-full');
+        expensePanel.classList.add('translate-y-0');
+      });
+    }
+
+    function closeExpenseModal() {
+      expenseBackdrop.classList.remove('opacity-100');
+      expenseBackdrop.classList.add('opacity-0');
+      expensePanel.classList.remove('translate-y-0');
+      expensePanel.classList.add('translate-y-full');
+      setTimeout(() => {
+        expenseModal.classList.add('hidden');
+      }, 280);
+    }
+
+    expenseLogBtn.addEventListener('click', openExpenseModal);
+    document.getElementById('expense-close-btn').addEventListener('click', closeExpenseModal);
+    expenseBackdrop.addEventListener('click', closeExpenseModal);
+
+    /**
+     * Navigasi Tab Bawah (Tong, Catat, Olah, Kas, Dampak)
+     */
+    const navTabs = document.querySelectorAll('.nav-tab');
+    navTabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const targetTab = tab.dataset.tab;
+        if (targetTab === 'Kas') {
+          e.preventDefault();
+          const mainContent = document.querySelector('main');
+          if (mainContent) {
+            mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
+      });
+    });
+
+    // Inisialisasi tampilan awal
+    document.addEventListener('DOMContentLoaded', () => {
+      renderKasPage();
+    });
+  </script>
+</body>
+</html>

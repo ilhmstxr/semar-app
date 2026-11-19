@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Catat Setoran & Pilah - catat</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#225E26',
+                            primary: '#2E7D32',
+                            light: '#E8F5E9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Pengaturan dasar mobile-first agar responsif dan bersih */
+        html,
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E5E7EB;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Hilangkan panah default browser pada select agar memakai ikon segitiga seragam */
+        select.custom-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Animasi transisi bottom sheet */
+        .bottom-sheet-backdrop {
+            transition: opacity 0.25s ease;
+        }
+
+        .bottom-sheet-panel {
+            transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Sembunyikan scrollbar bawaan di area scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex justify-center items-start sm:py-4">
+
+    <!-- Container Utama Mobile App -->
+    <div id="app-shell"
+        class="w-full max-w-[430px] min-h-screen sm:min-h-[844px] sm:rounded-[32px] sm:shadow-2xl sm:border-[6px] sm:border-[#1E242B] bg-[#F4F6F5] flex flex-col relative overflow-hidden">
+
+        <!-- Top Status Bar -->
+        <div
+            class="bg-[#225E26] text-white px-5 pt-2.5 pb-1.5 flex items-center justify-between text-xs font-medium select-none">
+            <span id="status-time" class="tracking-tight">08.05</span>
+            <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-semibold tracking-tight">4G</span>
+                <!-- Ikon Sinyal -->
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="2" y="14" width="3" height="6" rx="0.8"></rect>
+                    <rect x="7" y="11" width="3" height="9" rx="0.8"></rect>
+                    <rect x="12" y="7" width="3" height="13" rx="0.8"></rect>
+                    <rect x="17" y="3" width="3" height="17" rx="0.8"></rect>
+                </svg>
+                <!-- Ikon Baterai -->
+                <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M16 4h-2V2h-4v2H8C6.9 4 6 4.9 6 6v14c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z">
+                    </path>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Header Hijau Utama -->
+        <header class="bg-[#2E7D32] text-white px-5 pt-2 pb-5 shadow-sm flex items-end justify-between">
+            <div>
+                <p class="text-[13px] text-white/90 leading-snug">Formulir</p>
+                <h1 class="text-[22px] font-bold tracking-tight leading-snug mt-0.5">
+                    Catat Setoran &amp; Pilah
+                </h1>
+            </div>
+
+            <!-- Tombol Riwayat Catatan Hari Ini -->
+            <button type="button" id="history-btn"
+                class="text-xs font-semibold bg-white/15 hover:bg-white/25 active:scale-95 transition px-3 py-1.5 rounded-full text-white flex items-center gap-1.5"
+                title="Lihat riwayat setoran tersimpan">
+                <span>Riwayat</span>
+                <span id="history-count"
+                    class="bg-white text-[#2E7D32] text-[11px] font-bold px-1.5 py-0.2 rounded-full">0</span>
+            </button>
+        </header>
+
+        <!-- Konten Formulir Utama -->
+        <main class="flex-1 px-4 pt-3.5 pb-24 overflow-y-auto no-scrollbar">
+            <form id="catat-form" class="space-y-3" novalidate>
+
+                <!-- 1. Tanggal · Operator -->
+                <div>
+                    <label for="select-date-operator" class="block text-[13px] font-semibold text-[#4B5563] mb-1">
+                        Tanggal · Operator
+                    </label>
+                    <div class="relative">
+                        <select id="select-date-operator"
+                            class="custom-select w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 pr-9 text-[15px] text-[#1F2937] focus:outline-none focus:border-[#2E7D32] transition">
+                            <option value="12 Nov 2026 · Rina" selected>12 Nov 2026 · Rina</option>
+                            <option value="12 Nov 2026 · Budi">12 Nov 2026 · Budi</option>
+                            <option value="13 Nov 2026 · Rina">13 Nov 2026 · Rina</option>
+                            <option value="19 Nov 2026 · Rina">19 Nov 2026 · Rina</option>
+                        </select>
+                        <!-- Ikon Segitiga Bawah -->
+                        <span
+                            class="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-[#1F2937] text-xs">
+                            ▾
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 2. Asal sampah -->
+                <div>
+                    <label for="select-floor" class="block text-[13px] font-semibold text-[#4B5563] mb-1">
+                        Asal sampah
+                    </label>
+                    <div class="relative">
+                        <select id="select-floor"
+                            class="custom-select w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 pr-9 text-[15px] text-[#1F2937] focus:outline-none focus:border-[#2E7D32] transition">
+                            <option value="Lantai 1">Lantai 1</option>
+                            <option value="Lantai 2">Lantai 2</option>
+                            <option value="Lantai 3" selected>Lantai 3</option>
+                            <option value="Lantai 4">Lantai 4</option>
+                            <option value="Lantai 5">Lantai 5</option>
+                        </select>
+                        <span
+                            class="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-[#1F2937] text-xs">
+                            ▾
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 3. Berat masuk (kg) + Tombol Ambil dari sensor -->
+                <div>
+                    <label for="input-weight" class="block text-[13px] font-semibold text-[#4B5563] mb-1">
+                        Berat masuk (kg)
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input id="input-weight" type="text" inputmode="decimal" value="9,8"
+                            aria-label="Berat masuk dalam kilogram"
+                            class="w-full flex-1 min-w-0 bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 text-[15px] font-medium text-[#1F2937] focus:outline-none focus:border-[#2E7D32] transition" />
+                        <button type="button" id="fetch-sensor-btn"
+                            class="shrink-0 bg-white border border-[#2E7D32] text-[#2E7D32] hover:bg-[#E8F5E9] active:scale-[0.98] font-semibold text-[13px] px-3.5 py-2.5 rounded-xl transition whitespace-nowrap">
+                            Ambil dari sensor
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4. Kartu Hasil Pemilahan -->
+                <section id="sorting-card" role="button" tabindex="0"
+                    title="Ketuk untuk menyesuaikan rincian pemilahan secara manual"
+                    class="bg-white rounded-2xl p-4 border border-[#E5E7EB] shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-gray-300 active:scale-[0.995] transition cursor-pointer"
+                    aria-label="Hasil pemilahan sampah">
+                    <div class="flex items-center justify-between mb-2.5">
+                        <h2 class="text-[14px] font-bold text-[#1F2937]">Hasil pemilahan</h2>
+                        <span class="text-[11px] font-medium text-[#2E7D32]">Ubah rincian</span>
+                    </div>
+
+                    <div class="space-y-2.5 text-[14px]">
+                        <!-- Item 1: Sisa makanan -> maggot -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="w-3.5 h-3.5 rounded-full bg-[#F59E0B] shrink-0"></span>
+                                <span class="text-[#374151] truncate">Sisa makanan → maggot</span>
+                            </div>
+                            <span id="val-maggot" class="font-bold text-[#1F2937] shrink-0">7,6 kg</span>
+                        </div>
+
+                        <!-- Item 2: Bahan keras -> komposter -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="w-3.5 h-3.5 rounded-full bg-[#9333EA] shrink-0"></span>
+                                <span class="text-[#374151] truncate">Bahan keras → komposter</span>
+                            </div>
+                            <span id="val-komposter" class="font-bold text-[#1F2937] shrink-0">1,7 kg</span>
+                        </div>
+
+                        <!-- Item 3: Plastik terselip -> anorganik -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <span class="w-3.5 h-3.5 rounded-full bg-[#EF4444] shrink-0"></span>
+                                <span class="text-[#374151] truncate">Plastik terselip → anorganik</span>
+                            </div>
+                            <span id="val-anorganik" class="font-bold text-[#1F2937] shrink-0">0,5 kg</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. Bau di lorong? -->
+                <div>
+                    <label for="select-odor" class="block text-[13px] font-semibold text-[#4B5563] mb-1">
+                        Bau di lorong?
+                    </label>
+                    <div class="relative">
+                        <select id="select-odor"
+                            class="custom-select w-full bg-white border border-[#D1D5DB] rounded-xl px-3.5 py-2.5 pr-9 text-[15px] text-[#1F2937] focus:outline-none focus:border-[#2E7D32] transition">
+                            <option value="Tidak" selected>Tidak</option>
+                            <option value="Sedikit tercium">Sedikit tercium</option>
+                            <option value="Ya, menyengat">Ya, menyengat</option>
+                        </select>
+                        <span
+                            class="pointer-events-none absolute inset-y-0 right-3.5 flex items-center text-[#1F2937] text-xs">
+                            ▾
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 6. Foto (opsional) -->
+                <div>
+                    <label for="input-photo" class="block text-[13px] font-semibold text-[#4B5563] mb-1">
+                        Foto (opsional)
+                    </label>
+                    <input id="input-photo" type="file" accept="image/*" capture="environment" class="hidden" />
+
+                    <!-- Area Trigger Ambil Foto -->
+                    <div id="photo-trigger" role="button" tabindex="0"
+                        class="w-full bg-white border border-[#D1D5DB] hover:border-[#2E7D32] rounded-xl px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <span class="text-base leading-none" aria-hidden="true">📷</span>
+                            <span id="photo-label" class="text-[14px] text-[#6B7280] truncate">Ambil foto</span>
+                        </div>
+                        <button type="button" id="remove-photo-btn"
+                            class="hidden text-xs font-semibold text-red-600 hover:text-red-700 px-2 py-0.5 rounded-lg bg-red-50">
+                            Hapus
+                        </button>
+                    </div>
+
+                    <!-- Preview Thumbnail Foto jika dipilih -->
+                    <div id="photo-preview-wrap"
+                        class="hidden mt-2 relative rounded-xl overflow-hidden border border-gray-200 bg-white">
+                        <img id="photo-preview-img" src="" alt="Preview foto setoran"
+                            class="w-full h-32 object-cover" />
+                    </div>
+                </div>
+
+                <!-- 7. Tombol Simpan Utama -->
+                <div class="pt-1">
+                    <button type="submit" id="submit-btn"
+                        class="w-full bg-[#2E7D32] hover:bg-[#246627] active:scale-[0.99] text-white font-bold text-[15px] py-3.5 rounded-xl shadow-xs transition">
+                        Simpan
+                    </button>
+                </div>
+
+            </form>
+        </main>
+
+        <!-- Bottom Navigation Bar (5 Tab, Tab "Catat" Aktif) -->
+        <nav class="bg-white border-t border-gray-200 px-2 pt-2 pb-3 flex items-center justify-around sticky bottom-0 z-20 select-none"
+            aria-label="Navigasi Utama">
+
+            <!-- Tab 1: Tong -->
+            <a href="status.html" data-tab="Tong"
+                class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 10.5L12 3l9 7.5"></path>
+                    <path d="M5 9.5V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9.5"></path>
+                </svg>
+                <span class="text-[11px] leading-none">Tong</span>
+            </a>
+
+            <!-- Tab 2: Catat (Aktif Hijau) -->
+            <a href="catat.html" data-tab="Catat"
+                class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#2E7D32] font-semibold transition">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z" />
+                </svg>
+                <span class="text-[11px] leading-none">Catat</span>
+            </a>
+
+            <!-- Tab 3: Olah -->
+            <a href="olah.html" data-tab="Olah"
+                class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5" />
+                    <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12" />
+                    <path d="m14 16-3 3 3 3" />
+                    <path d="M8.293 13.596 7.196 9.5 3.1 10.598" />
+                    <path
+                        d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843" />
+                    <path d="m13.378 9.633 4.096 1.098 1.097-4.096" />
+                </svg>
+                <span class="text-[11px] leading-none">Olah</span>
+            </a>
+
+            <!-- Tab 4: Kas -->
+            <a href="kas.html" data-tab="Kas"
+                class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+                <span
+                    class="h-5 flex items-center justify-center text-[16px] font-bold tracking-tighter leading-none">Rp</span>
+                <span class="text-[11px] leading-none">Kas</span>
+            </a>
+
+            <!-- Tab 5: Dampak -->
+            <a href="dampak.html" data-tab="Dampak"
+                class="nav-tab flex-1 flex flex-col items-center justify-center gap-1 py-1 rounded-xl text-[#757575] hover:text-gray-800 font-medium transition">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 4h16v16H4V4zm3 4v2h10V8H7zm0 4v2h10v-2H7zm0 4v2h7v-2H7z" />
+                </svg>
+                <span class="text-[11px] leading-none">Dampak</span>
+            </a>
+
+        </nav>
+
+        <!-- Toast Notification (Pengganti alert) -->
+        <div id="toast-box"
+            class="pointer-events-none fixed sm:absolute bottom-20 left-1/2 -translate-x-1/2 z-40 opacity-0 transition-all duration-300 translate-y-2 w-[90%] max-w-[380px]">
+            <div id="toast-message"
+                class="bg-gray-900/95 text-white text-xs font-medium px-4 py-3 rounded-xl shadow-lg text-center">
+                Pesan notifikasi
+            </div>
+        </div>
+
+        <!-- Bottom Sheet Modal: Edit Manual Hasil Pemilahan -->
+        <div id="edit-sorting-modal" class="hidden fixed sm:absolute inset-0 z-30 flex items-end justify-center">
+            <div id="sorting-backdrop" class="bottom-sheet-backdrop absolute inset-0 bg-black/45 opacity-0"></div>
+            <div id="sorting-panel"
+                class="bottom-sheet-panel relative w-full bg-white rounded-t-3xl p-5 pb-7 shadow-2xl transform translate-y-full z-10">
+                <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4"></div>
+                <h2 class="text-base font-bold text-gray-900">Sesuaikan Hasil Pemilahan</h2>
+                <p class="text-xs text-gray-500 mb-4">Ubah berat masing-masing kategori (kg). Total berat masuk akan
+                    menyesuaikan otomatis.</p>
+
+                <div class="space-y-3 mb-5">
+                    <div class="flex items-center justify-between gap-3">
+                        <label for="edit-maggot" class="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <span class="w-3 h-3 rounded-full bg-[#F59E0B]"></span>
+                            <span>Sisa makanan → maggot</span>
+                        </label>
+                        <input id="edit-maggot" type="text" inputmode="decimal"
+                            class="w-24 text-right px-3 py-2 rounded-xl border border-gray-300 text-sm font-semibold focus:outline-none focus:border-[#2E7D32]" />
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3">
+                        <label for="edit-komposter" class="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <span class="w-3 h-3 rounded-full bg-[#9333EA]"></span>
+                            <span>Bahan keras → komposter</span>
+                        </label>
+                        <input id="edit-komposter" type="text" inputmode="decimal"
+                            class="w-24 text-right px-3 py-2 rounded-xl border border-gray-300 text-sm font-semibold focus:outline-none focus:border-[#2E7D32]" />
+                    </div>
+
+                    <div class="flex items-center justify-between gap-3">
+                        <label for="edit-anorganik" class="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <span class="w-3 h-3 rounded-full bg-[#EF4444]"></span>
+                            <span>Plastik terselip → anorganik</span>
+                        </label>
+                        <input id="edit-anorganik" type="text" inputmode="decimal"
+                            class="w-24 text-right px-3 py-2 rounded-xl border border-gray-300 text-sm font-semibold focus:outline-none focus:border-[#2E7D32]" />
+                    </div>
+                </div>
+
+                <div class="flex gap-2.5">
+                    <button type="button" id="sorting-cancel-btn"
+                        class="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition">
+                        Batal
+                    </button>
+                    <button type="button" id="sorting-save-btn"
+                        class="flex-1 py-3 px-4 rounded-xl bg-[#2E7D32] text-white font-semibold text-sm hover:bg-[#246627] transition">
+                        Terapkan
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Sheet Modal: Riwayat Catatan Tersimpan -->
+        <div id="history-modal" class="hidden fixed sm:absolute inset-0 z-30 flex items-end justify-center">
+            <div id="history-backdrop" class="bottom-sheet-backdrop absolute inset-0 bg-black/45 opacity-0"></div>
+            <div id="history-panel"
+                class="bottom-sheet-panel relative w-full bg-white rounded-t-3xl p-5 pb-7 shadow-2xl transform translate-y-full z-10 max-h-[75%] flex flex-col">
+                <div class="w-10 h-1.5 bg-gray-300 rounded-full mx-auto mb-4 shrink-0"></div>
+                <div class="flex items-center justify-between mb-3 shrink-0">
+                    <div>
+                        <h2 class="text-base font-bold text-gray-900">Riwayat Setoran &amp; Pilah</h2>
+                        <p class="text-xs text-gray-500">Daftar pencatatan yang sudah disimpan</p>
+                    </div>
+                    <button type="button" id="history-close-btn"
+                        class="text-xs font-semibold text-gray-500 hover:text-gray-800 px-2.5 py-1 rounded-lg bg-gray-100">
+                        Tutup
+                    </button>
+                </div>
+                <div id="history-list" class="overflow-y-auto space-y-2.5 pr-0.5 flex-1">
+                    <!-- Item riwayat diisi dinamis -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /**
+         * Data Sensor Tong Pintar per Lantai (Sinkron dengan halaman Status Tong Pintar)
+         */
+        const sensorDataByFloor = {
+            'Lantai 1': { weight: 4.1, active: true },
+            'Lantai 2': { weight: 7.9, active: true },
+            'Lantai 3': { weight: 9.8, active: true },
+            'Lantai 4': { weight: 2.6, active: true },
+            'Lantai 5': { weight: null, active: false }
+        };
+
+        /**
+         * State Formulir Catat Setoran & Pilah
+         */
+        const formState = {
+            totalWeight: 9.8,
+            maggotKg: 7.6,
+            komposterKg: 1.7,
+            anorganikKg: 0.5,
+            photoDataUrl: null,
+            photoName: '',
+            savedLogs: []
+        };
+
+        // Referensi Elemen DOM
+        const selectFloor = document.getElementById('select-floor');
+        const inputWeight = document.getElementById('input-weight');
+        const fetchSensorBtn = document.getElementById('fetch-sensor-btn');
+        const valMaggot = document.getElementById('val-maggot');
+        const valKomposter = document.getElementById('val-komposter');
+        const valAnorganik = document.getElementById('val-anorganik');
+        const toastBox = document.getElementById('toast-box');
+        const toastMessage = document.getElementById('toast-message');
+        let toastTimer = null;
+
+        /**
+         * Format angka desimal memakai koma ala Indonesia (contoh: 7.6 -> "7,6")
+         */
+        function formatID(num) {
+            return Number(num || 0).toFixed(1).replace('.', ',');
+        }
+
+        /**
+         * Parse input angka yang bisa memakai koma atau titik (contoh: "9,8" -> 9.8)
+         */
+        function parseIDNumber(str) {
+            if (typeof str === 'number') return str;
+            const cleaned = String(str).trim().replace(',', '.');
+            const parsed = parseFloat(cleaned);
+            return isNaN(parsed) || parsed < 0 ? 0 : parsed;
+        }
+
+        /**
+         * Tampilkan notifikasi toast halus
+         */
+        function showToast(msg) {
+            if (toastTimer) clearTimeout(toastTimer);
+            toastMessage.textContent = msg;
+            toastBox.classList.remove('opacity-0', 'translate-y-2');
+            toastBox.classList.add('opacity-100', 'translate-y-0');
+
+            toastTimer = setTimeout(() => {
+                toastBox.classList.remove('opacity-100', 'translate-y-0');
+                toastBox.classList.add('opacity-0', 'translate-y-2');
+            }, 2600);
+        }
+
+        /**
+         * Hitung rincian hasil pemilahan secara proporsional dari total berat masuk
+         */
+        function recalculateBreakdownFromTotal(total) {
+            const safeTotal = Math.max(0, Number(total) || 0);
+            formState.totalWeight = safeTotal;
+
+            // Proporsi acuan dari contoh standar: 9,8 kg -> 7,6 kg + 1,7 kg + 0,5 kg
+            const maggot = Math.round(safeTotal * (7.6 / 9.8) * 10) / 10;
+            const komposter = Math.round(safeTotal * (1.7 / 9.8) * 10) / 10;
+            const anorganik = Math.max(0, Math.round((safeTotal - maggot - komposter) * 10) / 10);
+
+            formState.maggotKg = maggot;
+            formState.komposterKg = komposter;
+            formState.anorganikKg = anorganik;
+
+            renderBreakdown();
+        }
+
+        /**
+         * Render tampilan angka di kartu Hasil Pemilahan
+         */
+        function renderBreakdown() {
+            valMaggot.textContent = `${formatID(formState.maggotKg)} kg`;
+            valKomposter.textContent = `${formatID(formState.komposterKg)} kg`;
+            valAnorganik.textContent = `${formatID(formState.anorganikKg)} kg`;
+        }
+
+        // Event saat berat diketik manual oleh operator
+        inputWeight.addEventListener('input', (e) => {
+            const weightVal = parseIDNumber(e.target.value);
+            recalculateBreakdownFromTotal(weightVal);
+        });
+
+        inputWeight.addEventListener('blur', () => {
+            inputWeight.value = formatID(formState.totalWeight);
+        });
+
+        // Event tombol "Ambil dari sensor"
+        fetchSensorBtn.addEventListener('click', () => {
+            const floor = selectFloor.value;
+            const sensor = sensorDataByFloor[floor];
+
+            if (!sensor || !sensor.active) {
+                showToast(`Sensor ${floor} sedang nonaktif (Sensor off). Masukkan berat manual.`);
+                inputWeight.focus();
+                return;
+            }
+
+            inputWeight.value = formatID(sensor.weight);
+            recalculateBreakdownFromTotal(sensor.weight);
+            showToast(`Berat ${formatID(sensor.weight)} kg diambil dari sensor ${floor}`);
+        });
+
+        /**
+         * Bottom Sheet: Edit Manual Hasil Pemilahan
+         */
+        const editSortingModal = document.getElementById('edit-sorting-modal');
+        const sortingBackdrop = document.getElementById('sorting-backdrop');
+        const sortingPanel = document.getElementById('sorting-panel');
+        const editMaggotInput = document.getElementById('edit-maggot');
+        const editKomposterInput = document.getElementById('edit-komposter');
+        const editAnorganikInput = document.getElementById('edit-anorganik');
+
+        function openSortingModal() {
+            editMaggotInput.value = formatID(formState.maggotKg);
+            editKomposterInput.value = formatID(formState.komposterKg);
+            editAnorganikInput.value = formatID(formState.anorganikKg);
+
+            editSortingModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                sortingBackdrop.classList.remove('opacity-0');
+                sortingBackdrop.classList.add('opacity-100');
+                sortingPanel.classList.remove('translate-y-full');
+                sortingPanel.classList.add('translate-y-0');
+            });
+        }
+
+        function closeSortingModal() {
+            sortingBackdrop.classList.remove('opacity-100');
+            sortingBackdrop.classList.add('opacity-0');
+            sortingPanel.classList.remove('translate-y-0');
+            sortingPanel.classList.add('translate-y-full');
+            setTimeout(() => {
+                editSortingModal.classList.add('hidden');
+            }, 280);
+        }
+
+        document.getElementById('sorting-card').addEventListener('click', openSortingModal);
+        document.getElementById('sorting-cancel-btn').addEventListener('click', closeSortingModal);
+        sortingBackdrop.addEventListener('click', closeSortingModal);
+
+        document.getElementById('sorting-save-btn').addEventListener('click', () => {
+            const m = parseIDNumber(editMaggotInput.value);
+            const k = parseIDNumber(editKomposterInput.value);
+            const a = parseIDNumber(editAnorganikInput.value);
+            const sum = Math.round((m + k + a) * 10) / 10;
+
+            formState.maggotKg = m;
+            formState.komposterKg = k;
+            formState.anorganikKg = a;
+            formState.totalWeight = sum;
+
+            inputWeight.value = formatID(sum);
+            renderBreakdown();
+            closeSortingModal();
+            showToast('Rincian hasil pemilahan diperbarui');
+        });
+
+        /**
+         * Unggah & Preview Foto (Opsional)
+         */
+        const inputPhoto = document.getElementById('input-photo');
+        const photoTrigger = document.getElementById('photo-trigger');
+        const photoLabel = document.getElementById('photo-label');
+        const removePhotoBtn = document.getElementById('remove-photo-btn');
+        const photoPreviewWrap = document.getElementById('photo-preview-wrap');
+        const photoPreviewImg = document.getElementById('photo-preview-img');
+
+        photoTrigger.addEventListener('click', (e) => {
+            if (e.target === removePhotoBtn) return;
+            inputPhoto.click();
+        });
+
+        inputPhoto.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                formState.photoDataUrl = ev.target.result;
+                formState.photoName = file.name;
+                photoLabel.textContent = file.name;
+                photoLabel.classList.remove('text-[#6B7280]');
+                photoLabel.classList.add('text-[#1F2937]', 'font-medium');
+                removePhotoBtn.classList.remove('hidden');
+                photoPreviewImg.src = ev.target.result;
+                photoPreviewWrap.classList.remove('hidden');
+                showToast('Foto berhasil dilampirkan');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removePhotoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            inputPhoto.value = '';
+            formState.photoDataUrl = null;
+            formState.photoName = '';
+            photoLabel.textContent = 'Ambil foto';
+            photoLabel.classList.remove('text-[#1F2937]', 'font-medium');
+            photoLabel.classList.add('text-[#6B7280]');
+            removePhotoBtn.classList.add('hidden');
+            photoPreviewWrap.classList.add('hidden');
+            photoPreviewImg.src = '';
+        });
+
+        /**
+         * Submit Formulir "Simpan"
+         */
+        const catatForm = document.getElementById('catat-form');
+        const historyCountEl = document.getElementById('history-count');
+
+        catatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            if (formState.totalWeight <= 0) {
+                showToast('Masukkan berat sampah lebih dari 0 kg');
+                inputWeight.focus();
+                return;
+            }
+
+            const newRecord = {
+                id: Date.now(),
+                dateOperator: document.getElementById('select-date-operator').value,
+                floor: selectFloor.value,
+                totalWeight: formState.totalWeight,
+                maggotKg: formState.maggotKg,
+                komposterKg: formState.komposterKg,
+                anorganikKg: formState.anorganikKg,
+                odor: document.getElementById('select-odor').value,
+                hasPhoto: Boolean(formState.photoDataUrl)
+            };
+
+            formState.savedLogs.unshift(newRecord);
+            historyCountEl.textContent = formState.savedLogs.length;
+
+            showToast(`Setoran ${newRecord.floor} (${formatID(newRecord.totalWeight)} kg) berhasil disimpan!`);
+        });
+
+        /**
+         * Bottom Sheet: Riwayat Setoran
+         */
+        const historyModal = document.getElementById('history-modal');
+        const historyBackdrop = document.getElementById('history-backdrop');
+        const historyPanel = document.getElementById('history-panel');
+        const historyList = document.getElementById('history-list');
+
+        function openHistoryModal() {
+            if (formState.savedLogs.length === 0) {
+                historyList.innerHTML = `
+          <div class="text-center py-8 text-xs text-gray-500 bg-gray-50 rounded-2xl border border-gray-100">
+            Belum ada catatan setoran tersimpan.<br/>Tekan tombol <strong>Simpan</strong> untuk mencatat setoran.
+          </div>
+        `;
+            } else {
+                historyList.innerHTML = formState.savedLogs.map(item => `
+          <div class="bg-gray-50 border border-gray-200/80 rounded-2xl p-3.5 text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-gray-900 text-sm">${item.floor} · ${formatID(item.totalWeight)} kg</span>
+              <span class="px-2 py-0.5 rounded-full bg-[#E8F5E9] text-[#2E7D32] font-semibold">Tersimpan</span>
+            </div>
+            <p class="text-gray-500">${item.dateOperator} · Bau: ${item.odor}</p>
+            <p class="text-gray-600 pt-0.5">
+              Maggot: <strong>${formatID(item.maggotKg)} kg</strong> · Komposter: <strong>${formatID(item.komposterKg)} kg</strong> · Anorganik: <strong>${formatID(item.anorganikKg)} kg</strong>
+            </p>
+          </div>
+        `).join('');
+            }
+
+            historyModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                historyBackdrop.classList.remove('opacity-0');
+                historyBackdrop.classList.add('opacity-100');
+                historyPanel.classList.remove('translate-y-full');
+                historyPanel.classList.add('translate-y-0');
+            });
+        }
+
+        function closeHistoryModal() {
+            historyBackdrop.classList.remove('opacity-100');
+            historyBackdrop.classList.add('opacity-0');
+            historyPanel.classList.remove('translate-y-0');
+            historyPanel.classList.add('translate-y-full');
+            setTimeout(() => {
+                historyModal.classList.add('hidden');
+            }, 280);
+        }
+
+        document.getElementById('history-btn').addEventListener('click', openHistoryModal);
+        document.getElementById('history-close-btn').addEventListener('click', closeHistoryModal);
+        historyBackdrop.addEventListener('click', closeHistoryModal);
+
+        /**
+         * Navigasi Tab Bawah
+         */
+        const navTabs = document.querySelectorAll('.nav-tab');
+        navTabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const targetTab = tab.dataset.tab;
+                if (targetTab === 'Catat') {
+                    e.preventDefault();
+                    const mainContent = document.querySelector('main');
+                    if (mainContent) {
+                        mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Inisialisasi tampilan awal
+        document.addEventListener('DOMContentLoaded', () => {
+            renderBreakdown();
+        });
+    </script>
+</body>
+
+</html>
