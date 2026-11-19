@@ -196,7 +196,7 @@ export const createSetoran = async (req, res, next) => {
 
     // Simpan ke tabel waste_collections
     const insertSql = `
-      INSERT INTO waste_collections (
+      INSERT INTO waste_collections (r
         bin_id, operator_id, collection_date, total_weight_kg,
         maggot_feed_kg, composter_kg, anorganik_kg,
         corridor_odor, photo_url, created_at

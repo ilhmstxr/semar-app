@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,16 +7,21 @@ import {
   StyleSheet,
   TextInput,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
-import { RefreshCw, AlertTriangle, CheckCircle2, AlertCircle, Clock, Radio } from 'lucide-react-native';
+import { RefreshCw, Clock } from 'lucide-react-native';
 import { SEMAR_COLORS } from '@/constants/colors';
 import StatusBarHeader from '@/components/common/StatusBarHeader';
 import AppHeader from '@/components/common/AppHeader';
 import BottomSheetModal from '@/components/common/BottomSheetModal';
 import Toast from '@/components/common/Toast';
+import RealtimeInfoCard from '@/components/common/RealtimeInfoCard';
+import TopNotificationBanner from '@/components/common/TopNotificationBanner';
 import { useBinStore } from '@/stores/useBinStore';
 import { BinItem } from '@/constants/mockData';
+import {
+  requestNotificationPermission,
+  triggerPickupPushNotification,
+} from '@/services/notificationService';
 
 export default function StatusScreen() {
   const {
@@ -27,7 +32,6 @@ export default function StatusScreen() {
     isDetailModalOpen,
     isEditBlockModalOpen,
     isLoading,
-    lastFetchedAt,
     fetchBins,
     setBlockName,
     setOperator,
@@ -43,7 +47,16 @@ export default function StatusScreen() {
   const [tempBlock, setTempBlock] = useState(blockName);
   const [tempOperator, setTempOperator] = useState(operator);
 
-  // Live fetching setiap 30 detik dari IoT Database
+  // State untuk notifikasi push jemput di atas
+  const [isTopNotifVisible, setIsTopNotifVisible] = useState(false);
+  const notifiedBinIdRef = useRef<number | null>(null);
+
+  // Minta izin notifikasi perangkat saat pertama kali dimuat
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
+  // Live fetching setiap 30 detik dari IoT Database (background silent)
   useEffect(() => {
     fetchBins(false);
 
@@ -54,8 +67,24 @@ export default function StatusScreen() {
     return () => clearInterval(interval);
   }, [fetchBins]);
 
-  // Cari tong yang paling kritis untuk alert banner
-  const priorityBin = bins.find((b) => b.status === 'Jemput') || bins.find((b) => b.status === 'Segera');
+  // Cari tong yang berstatus 'Jemput' untuk notifikasi push di atas
+  const jemputBin = bins.find((b) => b.status === 'Jemput');
+
+  // Trigger push notification bila terdapat tong berstatus Jemput
+  useEffect(() => {
+    if (jemputBin) {
+      setIsTopNotifVisible(true);
+
+      // Kirim push notification ke status bar HP jika belum terkirim untuk tong ini
+      if (notifiedBinIdRef.current !== jemputBin.id) {
+        notifiedBinIdRef.current = jemputBin.id;
+        triggerPickupPushNotification(jemputBin.floor, jemputBin.weightKg, jemputBin.percent);
+      }
+    } else {
+      setIsTopNotifVisible(false);
+      notifiedBinIdRef.current = null;
+    }
+  }, [jemputBin]);
 
   const handleManualRefresh = async () => {
     await refreshSensor();
@@ -71,15 +100,9 @@ export default function StatusScreen() {
 
   const handlePickUp = async (binId: number) => {
     await markPickedUp(binId);
+    setIsTopNotifVisible(false);
+    notifiedBinIdRef.current = null;
     setToastMsg('Tong berhasil ditandai sudah dijemput & sensor direset');
-  };
-
-  const formatLastSync = (date: Date | null) => {
-    if (!date) return 'Menghubungkan...';
-    const h = String(date.getHours()).padStart(2, '0');
-    const m = String(date.getMinutes()).padStart(2, '0');
-    const s = String(date.getSeconds()).padStart(2, '0');
-    return `${h}:${m}:${s}`;
   };
 
   return (
@@ -96,14 +119,16 @@ export default function StatusScreen() {
         }}
       />
 
-      {/* Bar Indikator Live IoT (Per 30 Detik) */}
-      <View style={styles.liveIndicatorBar}>
-        <View style={styles.liveDotRow}>
-          <View style={styles.livePulseDot} />
-          <Text style={styles.liveText}>Live IoT Telemetri (Otomatis per 30 detik)</Text>
-        </View>
-        <Text style={styles.liveSyncText}>Sinkron: {formatLastSync(lastFetchedAt)}</Text>
-      </View>
+      {/* 4. Notifikasi Push Muncul di Atas untuk Keperluan Mengambil / Jemput */}
+      {jemputBin && isTopNotifVisible && (
+        <TopNotificationBanner
+          visible={isTopNotifVisible}
+          title={`Perlu Dijemput: ${jemputBin.floor}!`}
+          message={`Sampah telah mencapai ${jemputBin.weightKg} kg (${jemputBin.percent}% penuh). Segera ambil untuk proses pemilahan.`}
+          onPress={() => openDetailModal(jemputBin)}
+          onClose={() => setIsTopNotifVisible(false)}
+        />
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -117,28 +142,10 @@ export default function StatusScreen() {
           />
         }
       >
-        {/* Banner Peringatan Prioritas */}
-        {priorityBin && (
-          <View style={styles.alertBanner}>
-            <View style={styles.alertHeader}>
-              <AlertTriangle size={18} color="#DC2626" />
-              <Text style={styles.alertTitle}>Perlu Dijemput Segera!</Text>
-            </View>
-            <Text style={styles.alertDesc}>
-              Tong di <Text style={{ fontWeight: '700' }}>{priorityBin.floor}</Text> telah terisi{' '}
-              <Text style={{ fontWeight: '700' }}>{priorityBin.weightKg} kg ({priorityBin.percent}%)</Text> dan disimpan selama {priorityBin.ageHours} jam.
-            </Text>
-            <TouchableOpacity
-              style={styles.alertBtn}
-              activeOpacity={0.8}
-              onPress={() => openDetailModal(priorityBin)}
-            >
-              <Text style={styles.alertBtnText}>Tinjau Lantai Ini</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* 2. Card Waktu Realtime Sekarang & Operator (Di Bawah Nav Atas) */}
+        <RealtimeInfoCard />
 
-        {/* Daftar Kartu Status Lantai */}
+        {/* Daftar Kartu Status Lantai (Alert banner lama dihapus) */}
         <View style={styles.binsList}>
           {bins.map((bin) => {
             const isFull = bin.status === 'Jemput';
@@ -293,80 +300,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: SEMAR_COLORS.background,
   },
-  liveIndicatorBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#C8E6C9',
-  },
-  liveDotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  livePulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#16A34A',
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#1B5E20',
-  },
-  liveSyncText: {
-    fontSize: 11,
-    color: '#2E7D32',
-    fontWeight: '500',
-  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 16,
+    paddingTop: 12,
     paddingBottom: 24,
-  },
-  alertBanner: {
-    backgroundColor: SEMAR_COLORS.redBadge,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 16,
-  },
-  alertHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  alertTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#B91C1C',
-  },
-  alertDesc: {
-    fontSize: 13,
-    color: '#7F1D1D',
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  alertBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#DC2626',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  alertBtnText: {
-    color: SEMAR_COLORS.white,
-    fontSize: 12,
-    fontWeight: '700',
   },
   binsList: {
     gap: 12,

@@ -1,0 +1,497 @@
+{
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\semar.sql": {
+    "mtime": 1795063277.520345,
+    "ast_hash": "0635e98a75e9fe966541e2cb75a51ab2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\package.json": {
+    "mtime": 1795068416.584613,
+    "ast_hash": "38ccbd16a3540216617dad92f05a0236",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\app.js": {
+    "mtime": 1795068660.914516,
+    "ast_hash": "e7533bff963c05413e3d6de3f08e85c4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\server.js": {
+    "mtime": 1795073193.2357106,
+    "ast_hash": "3831a18a2304a0249b34c71efe164ec2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\config\\db.js": {
+    "mtime": 1795068632.630817,
+    "ast_hash": "66253a8006ee5caf414b92b6aa93bee3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\config\\env.js": {
+    "mtime": 1795068621.4346058,
+    "ast_hash": "47b4694a3889de2a2c250ac9642d49f5",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\controllers\\binController.js": {
+    "mtime": 1795068687.4032955,
+    "ast_hash": "749c7d45dbf39d7bdf8ccfd48527e3cb",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\controllers\\catatController.js": {
+    "mtime": 1795078493.9345407,
+    "ast_hash": "dededdca2a68e217fee4b3673f27db74",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\controllers\\dampakController.js": {
+    "mtime": 1795063351.823624,
+    "ast_hash": "085e0d27c4e945f783406889f5aa0301",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\controllers\\kasController.js": {
+    "mtime": 1795068747.414512,
+    "ast_hash": "d3d18e1c0b756b3f25b8e5b47190cbb1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\controllers\\olahController.js": {
+    "mtime": 1795063345.2446473,
+    "ast_hash": "e03a3863d1a00f024cd975e3d3bcb71b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\data\\initialData.js": {
+    "mtime": 1795063325.5177298,
+    "ast_hash": "7a8bd8dbf25c3c5f436e928a2cdfa588",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\docs\\openapi.js": {
+    "mtime": 1795071064.9563708,
+    "ast_hash": "3e925e4ed95182a6b37dcfe4d2b0e71f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\middlewares\\errorHandler.js": {
+    "mtime": 1795068651.4837058,
+    "ast_hash": "1febf3dfae09a85d08fc3ce959bf57c9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\middlewares\\notFound.js": {
+    "mtime": 1795063329.9059913,
+    "ast_hash": "98c2070e717b249dcde0387fd7ce76f2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\middlewares\\upload.js": {
+    "mtime": 1795068642.1750686,
+    "ast_hash": "6184cc8c1e8e4d40b0db1a778690ea89",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\binRoutes.js": {
+    "mtime": 1795068692.823433,
+    "ast_hash": "2341e82f96c2d6f7e3cffa7f2b81d894",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\catatRoutes.js": {
+    "mtime": 1795068728.2630124,
+    "ast_hash": "fedaf79b6262211602db3b2c4a20aec1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\dampakRoutes.js": {
+    "mtime": 1795063366.8271859,
+    "ast_hash": "b5062af9bd843a21488145f5bc6e98f6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\docRoutes.js": {
+    "mtime": 1795066244.1625433,
+    "ast_hash": "80ea4e98f69b6604c5c05a2c9f0dc7dc",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\index.js": {
+    "mtime": 1795063370.313748,
+    "ast_hash": "b622c97bdcc879684e9efe56fb959fd1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\kasRoutes.js": {
+    "mtime": 1795063364.1986961,
+    "ast_hash": "041e41569b50a5125bd0bad7eb9ba97e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\src\\routes\\olahRoutes.js": {
+    "mtime": 1795063361.428964,
+    "ast_hash": "ea2b0a889aac49ea155d5dd39973b806",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\app.json": {
+    "mtime": 1795065402.436993,
+    "ast_hash": "74e316e88a257a5e44f4d70ba67054ce",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\expo-env.d.ts": {
+    "mtime": 1795079989.9834313,
+    "ast_hash": "0dd9dccdb4b08595bc83df70d6a154d3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\metro.config.js": {
+    "mtime": 1795066510.9746096,
+    "ast_hash": "f56c1a7fb75d20b2070100365df0bbca",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\package.json": {
+    "mtime": 1795078824.6423118,
+    "ast_hash": "e4e19f3cbc3cd7bf7dea0ce29f1b0a22",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\tsconfig.json": {
+    "mtime": 1795061406.7761395,
+    "ast_hash": "6794be22dd9dd00003515895d3b4ff06",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.claude\\settings.json": {
+    "mtime": 1795061505.6118414,
+    "ast_hash": "dc580fca35a0e98ed20777ede5e545a1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\devices.json": {
+    "mtime": 1795063518.0783803,
+    "ast_hash": "e5f6eb13c875f326cfd5915d3364614f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\settings.json": {
+    "mtime": 1795073928.0911174,
+    "ast_hash": "404c045210657562b15604de2b785991",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\static-tmp\\_error.js": {
+    "mtime": 1795072863.1928394,
+    "ast_hash": "75d395a7ebbcdc4fcb12edde300b4057",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\types\\router.d.ts": {
+    "mtime": 1795079991.0012143,
+    "ast_hash": "c9160935a00fa8ac6c4e2d71f34ba557",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo-home \\state.json": {
+    "mtime": 1795064576.4686303,
+    "ast_hash": "3283024b166ee3708d5d8cc4f437441e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.vscode\\extensions.json": {
+    "mtime": 1795061406.6297703,
+    "ast_hash": "b2354ba0225f5689d13651ec0fac0de0",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.vscode\\settings.json": {
+    "mtime": 1795061406.6338136,
+    "ast_hash": "6b9302c1f72c315e90233c7539c48c9f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\expo.icon\\icon.json": {
+    "mtime": 1795061406.6593976,
+    "ast_hash": "35cb915a0bebbebbe69cf7815e174462",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\scripts\\reset-project.js": {
+    "mtime": 1795061406.733193,
+    "ast_hash": "10e35b3a8bf96e45ddfc4a5dd2974fee",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\index.tsx": {
+    "mtime": 1795062326.5904458,
+    "ast_hash": "eeba024a4634e2f8c0337e8f988dc181",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\_layout.tsx": {
+    "mtime": 1795062368.8200345,
+    "ast_hash": "93d3e776ff2640dc00f316a57c810170",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\catat.tsx": {
+    "mtime": 1795079005.9194784,
+    "ast_hash": "bde4ae332f14e8b045847c421244a5c4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\dampak.tsx": {
+    "mtime": 1795079059.1153343,
+    "ast_hash": "933b5d8f14f05853b945fd554634fa1e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\kas.tsx": {
+    "mtime": 1795079028.373495,
+    "ast_hash": "8ea9e221e43fd96fd12e6bcc44fc51d2",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\olah.tsx": {
+    "mtime": 1795079046.9521742,
+    "ast_hash": "ae7f844d7d04a02a8f18918c7d923c4f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\status.tsx": {
+    "mtime": 1795078916.721867,
+    "ast_hash": "a1dbd7e506ca8df201f063fa4955c99b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\app\\(tabs)\\_layout.tsx": {
+    "mtime": 1795065397.289529,
+    "ast_hash": "eb64e6f5c118fb8bb74d027d43d66b49",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\AppHeader.tsx": {
+    "mtime": 1795062228.0426767,
+    "ast_hash": "699c3f809a3c225f8fe724dcd2f53a9d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\BottomSheetModal.tsx": {
+    "mtime": 1795062232.3616636,
+    "ast_hash": "da974076f40ae0ad72a4d051feb7272a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\RealtimeInfoCard.tsx": {
+    "mtime": 1795078850.9646108,
+    "ast_hash": "276f4027311c1edbfc943d32938b7c77",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\StatusBarHeader.tsx": {
+    "mtime": 1795062224.3479195,
+    "ast_hash": "68a9a059c5c69bc8a236d54f309418d1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\Toast.tsx": {
+    "mtime": 1795062235.7039983,
+    "ast_hash": "95cb4f63f3bdb11942ee36c9f6463cb6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\components\\common\\TopNotificationBanner.tsx": {
+    "mtime": 1795078882.0494795,
+    "ast_hash": "ef2cb6b449eee777aed04249ad926a0f",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\constants\\api.ts": {
+    "mtime": 1795073203.7851346,
+    "ast_hash": "d441732c5cac1cdf0d62a09752f883f1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\constants\\colors.ts": {
+    "mtime": 1795062192.9086652,
+    "ast_hash": "f1134d2d932234ca47bc4e2d9ba8e588",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\constants\\mockData.ts": {
+    "mtime": 1795070649.3561313,
+    "ast_hash": "c75c6128702942d61ccb2954163cf945",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\constants\\theme.ts": {
+    "mtime": 1795062382.8472877,
+    "ast_hash": "266762651ff71a6aabee5687ee10bcc4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\hooks\\use-color-scheme.ts": {
+    "mtime": 1795061406.7721443,
+    "ast_hash": "6f3444fcb9c7013a839a7832be518831",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\hooks\\use-color-scheme.web.ts": {
+    "mtime": 1795061406.7732844,
+    "ast_hash": "071fbb9a1a05ffb8af4b7d3b1ffa72d6",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\hooks\\use-theme.ts": {
+    "mtime": 1795061406.7745552,
+    "ast_hash": "907bdccebf681870205e269eb2cb1e89",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\services\\api.ts": {
+    "mtime": 1795070337.6566665,
+    "ast_hash": "aa313daa71f30d5518d448fd7d976564",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\services\\notificationService.ts": {
+    "mtime": 1795079086.122778,
+    "ast_hash": "e2ecfc48a8586dda2289c9a7648fb9c4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\stores\\useBinStore.ts": {
+    "mtime": 1795070349.7780468,
+    "ast_hash": "92961ecf0805fb97adafe0d99d85b4a5",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\stores\\useCatatStore.ts": {
+    "mtime": 1795078929.9305737,
+    "ast_hash": "fabeab66d21e52da2d3069328a672889",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\stores\\useDampakStore.ts": {
+    "mtime": 1795062219.5111654,
+    "ast_hash": "772fc2c25e22add45daddd7095f43dba",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\stores\\useKasStore.ts": {
+    "mtime": 1795070550.2985823,
+    "ast_hash": "34e3e0b51e12cf9a589ae789397a78b3",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\src\\stores\\useOlahStore.ts": {
+    "mtime": 1795062211.8414354,
+    "ast_hash": "e9e3aac4cc5ba32e254ec828430ee17e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\backend\\README.md": {
+    "mtime": 1795066391.2778769,
+    "ast_hash": "5fc637ce2ecc4e6d35cafdee20cabb1b",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\AGENTS.md": {
+    "mtime": 1795061399.2888417,
+    "ast_hash": "233d1484702a528f5dcb4333cd01bb43",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\CLAUDE.md": {
+    "mtime": 1795061399.2938564,
+    "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\README.md": {
+    "mtime": 1795061406.623713,
+    "ast_hash": "eb5f872f52f27a396760543256be1c96",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\README.md": {
+    "mtime": 1795063518.0159972,
+    "ast_hash": "a7c2b7fea86b2a2559e471f999e478f1",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-v1-html\\catat.html": {
+    "mtime": 1795060241.505292,
+    "ast_hash": "bcd7b6fef11c807826f54ff4b9fd3a03",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-v1-html\\dampak.html": {
+    "mtime": 1795060280.8750305,
+    "ast_hash": "378f7a1f4fc9d4dd394c281b9e989cce",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-v1-html\\kas.html": {
+    "mtime": 1795060267.4846346,
+    "ast_hash": "ac96a51c3ec503e210a29baa4b222d56",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-v1-html\\olah.html": {
+    "mtime": 1795060252.4279642,
+    "ast_hash": "2fa9569fe6d10166b56d4cc13dae3f97",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-v1-html\\status.html": {
+    "mtime": 1795060229.5234532,
+    "ast_hash": "2cc549fb4f2605526033ee91fbea3aaa",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\.expo\\web\\cache\\production\\images\\favicon\\favicon-a4e030697a7571b3e95d31860e4da55d2f98e5e861e2b55e414f45a8556828ba-contain-transparent\\favicon-48.png": {
+    "mtime": 1795063585.9322803,
+    "ast_hash": "20a9fe6c2469bd28db1c1baab735ceb4",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\expo.icon\\Assets\\expo-symbol 2.svg": {
+    "mtime": 1795061406.65003,
+    "ast_hash": "6979b664c1ce82c10426a051082412a7",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\expo.icon\\Assets\\grid.png": {
+    "mtime": 1795061406.6543207,
+    "ast_hash": "37cdeda9d1af5d7432716d9671b098da",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\android-icon-background.png": {
+    "mtime": 1795061406.6639972,
+    "ast_hash": "2d65569cc0e2afdcea0af9f9902d4173",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\android-icon-foreground.png": {
+    "mtime": 1795061406.6709116,
+    "ast_hash": "72e71a9c846c6aa4ae32476641a00e18",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\android-icon-monochrome.png": {
+    "mtime": 1795061406.6735287,
+    "ast_hash": "1e097dab989759fc0b69440092ca22cd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\expo-badge-white.png": {
+    "mtime": 1795061406.6755304,
+    "ast_hash": "02efb8472f161bcf8afc8c8489a28fca",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\expo-badge.png": {
+    "mtime": 1795061406.6770399,
+    "ast_hash": "6b0da8ec880685d1bd053c0f5ea9d09d",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\expo-logo.png": {
+    "mtime": 1795061406.679052,
+    "ast_hash": "5ee5db91d59518c45ebcc99a2f5afc57",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\favicon.png": {
+    "mtime": 1795061406.680063,
+    "ast_hash": "d9f444efbdfbe7931aa93beada07318a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\icon.png": {
+    "mtime": 1795061406.6978624,
+    "ast_hash": "8d892ef03dbd43e8d899c1d605ad42df",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\logo-glow.png": {
+    "mtime": 1795061406.703493,
+    "ast_hash": "dbca075a49dc45e550c5d2e3e9601039",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\react-logo.png": {
+    "mtime": 1795061406.7055073,
+    "ast_hash": "695d5a1c6f29a689130f3aaa573aec6e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\react-logo@2x.png": {
+    "mtime": 1795061406.7080824,
+    "ast_hash": "b507e7f2c91ebc8fe24dee79ccb3b600",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\react-logo@3x.png": {
+    "mtime": 1795061406.7101088,
+    "ast_hash": "8a4d0e5b845044e56e3b2df627d01cfd",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\splash-icon.png": {
+    "mtime": 1795061406.7121084,
+    "ast_hash": "5ee5db91d59518c45ebcc99a2f5afc57",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tutorial-web.png": {
+    "mtime": 1795061406.7261767,
+    "ast_hash": "c62d22797f3002396754d8cc55b0ae1a",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\explore.png": {
+    "mtime": 1795061406.7141078,
+    "ast_hash": "8409922f7d5c981001e3c9b25e4bfae5",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\explore@2x.png": {
+    "mtime": 1795061406.7151077,
+    "ast_hash": "dd40200ba8e8d98061578292d6b73791",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\explore@3x.png": {
+    "mtime": 1795061406.7171113,
+    "ast_hash": "c4278d79298bb11a8b0e68ed3e40da9e",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\home.png": {
+    "mtime": 1795061406.7186334,
+    "ast_hash": "eeb5de2ac12ace75b31dfda235208956",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\home@2x.png": {
+    "mtime": 1795061406.7198815,
+    "ast_hash": "456346cfb0b82cc0f39e921e05d082d9",
+    "semantic_hash": ""
+  },
+  "C:\\Users\\Ilhamstxr\\Documents\\laragon\\www\\SEMAR\\prot-react-native\\assets\\images\\tabIcons\\home@3x.png": {
+    "mtime": 1795061406.7220702,
+    "ast_hash": "5d86e963002b3664ab81c128c838559d",
+    "semantic_hash": ""
+  }
+}

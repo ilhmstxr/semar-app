@@ -12,6 +12,7 @@ import StatusBarHeader from '@/components/common/StatusBarHeader';
 import AppHeader from '@/components/common/AppHeader';
 import BottomSheetModal from '@/components/common/BottomSheetModal';
 import Toast from '@/components/common/Toast';
+import RealtimeInfoCard from '@/components/common/RealtimeInfoCard';
 import { useDampakStore } from '@/stores/useDampakStore';
 
 export default function DampakScreen() {
@@ -56,6 +57,8 @@ export default function DampakScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Card Waktu Realtime Sekarang & Operator */}
+        <RealtimeInfoCard />
         {/* 1. Dua Kartu Metrik Utama */}
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>

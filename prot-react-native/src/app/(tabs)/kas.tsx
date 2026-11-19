@@ -15,6 +15,7 @@ import StatusBarHeader from '@/components/common/StatusBarHeader';
 import AppHeader from '@/components/common/AppHeader';
 import BottomSheetModal from '@/components/common/BottomSheetModal';
 import Toast from '@/components/common/Toast';
+import RealtimeInfoCard from '@/components/common/RealtimeInfoCard';
 import { useKasStore } from '@/stores/useKasStore';
 
 export default function KasScreen() {
@@ -132,6 +133,8 @@ export default function KasScreen() {
           />
         }
       >
+        {/* Card Waktu Realtime Sekarang & Operator */}
+        <RealtimeInfoCard />
         {/* 1. Kartu Saldo Kas Utama */}
         <TouchableOpacity
           style={styles.balanceCard}

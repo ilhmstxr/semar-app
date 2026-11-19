@@ -9,7 +9,6 @@ import {
   Image,
   Alert,
   ActivityIndicator,
-  Modal,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import {
@@ -17,10 +16,6 @@ import {
   Camera,
   Trash2,
   CheckCircle2,
-  ChevronRight,
-  Layers,
-  Clock,
-  User,
   AlertCircle,
   Image as ImageIcon,
 } from 'lucide-react-native';
@@ -29,6 +24,7 @@ import StatusBarHeader from '@/components/common/StatusBarHeader';
 import AppHeader from '@/components/common/AppHeader';
 import BottomSheetModal from '@/components/common/BottomSheetModal';
 import Toast from '@/components/common/Toast';
+import RealtimeInfoCard from '@/components/common/RealtimeInfoCard';
 import { useCatatStore, OdorType } from '@/stores/useCatatStore';
 import { useBinStore } from '@/stores/useBinStore';
 import { uploadSetoranPhotoApi, getFullPhotoUrl } from '@/services/api';
@@ -70,27 +66,30 @@ export default function CatatScreen() {
   const { operator } = useBinStore();
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [inputWeightStr, setInputWeightStr] = useState(String(totalWeight).replace('.', ','));
+  const [inputWeightStr, setInputWeightStr] = useState(totalWeight > 0 ? String(totalWeight).replace('.', ',') : '');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-
-  // Realtime clock (Tahun, Bulan, Tanggal, Jam, Menit, Detik)
-  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     fetchSensorWeights();
     fetchHistory();
-
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
   }, [fetchSensorWeights, fetchHistory]);
+
+  // Sinkronkan inputWeightStr jika totalWeight berubah dari luar (misal: tombol ambil dari sensor)
+  useEffect(() => {
+    if (totalWeight > 0) {
+      setInputWeightStr(String(totalWeight).replace('.', ','));
+    } else {
+      setInputWeightStr('');
+    }
+  }, [totalWeight]);
 
   // State untuk modal edit pemilahan manual
   const [editMaggot, setEditMaggot] = useState(String(maggotKg).replace('.', ','));
   const [editKomposter, setEditKomposter] = useState(String(komposterKg).replace('.', ','));
   const [editAnorganik, setEditAnorganik] = useState(String(anorganikKg).replace('.', ','));
+
+  // 1. Validasi: Berat total masuk harus terisi (> 0) agar tombol Sesuaikan aktif
+  const isWeightEntered = totalWeight > 0;
 
   // Akumulasi pemilahan saat ini
   const accumulatedKg = Math.round((maggotKg + komposterKg + anorganikKg) * 10) / 10;
@@ -100,9 +99,6 @@ export default function CatatScreen() {
   const handleFetchSensor = async () => {
     const res = await fetchFromSensor();
     setToastMsg(res.message);
-    if (res.success) {
-      setInputWeightStr(String(useCatatStore.getState().totalWeight).replace('.', ','));
-    }
   };
 
   const handleWeightChange = (text: string) => {
@@ -110,10 +106,16 @@ export default function CatatScreen() {
     const parsed = parseFloat(text.replace(',', '.'));
     if (!isNaN(parsed) && parsed >= 0) {
       setTotalWeight(parsed);
+    } else if (text.trim() === '') {
+      setTotalWeight(0);
     }
   };
 
   const handleOpenEditModal = () => {
+    if (!isWeightEntered) {
+      setToastMsg('Harap isi kolom berat total masuk terlebih dahulu');
+      return;
+    }
     setEditMaggot(String(maggotKg).replace('.', ','));
     setEditKomposter(String(komposterKg).replace('.', ','));
     setEditAnorganik(String(anorganikKg).replace('.', ','));
@@ -134,7 +136,7 @@ export default function CatatScreen() {
     setToastMsg('Rincian hasil pemilahan berhasil disesuaikan');
   };
 
-  // 2d: Ambil / unggah foto dengan max ukuran 5MB
+  // Upload foto dengan limit max 5MB
   const handlePickPhoto = async () => {
     try {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -152,7 +154,6 @@ export default function CatatScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
 
-        // Validasi ukuran max 5MB (5 * 1024 * 1024 bytes)
         if (asset.fileSize && asset.fileSize > 5 * 1024 * 1024) {
           Alert.alert('Ukuran File Terlalu Besar', 'Maksimal ukuran file foto adalah 5MB.');
           return;
@@ -161,7 +162,6 @@ export default function CatatScreen() {
         setIsUploadingPhoto(true);
         setPhoto(asset.uri, null);
 
-        // Upload ke backend
         const formData = new FormData();
         const filename = asset.fileName || `setoran-${Date.now()}.jpg`;
         const match = /\.(\w+)$/.exec(filename);
@@ -181,7 +181,6 @@ export default function CatatScreen() {
       }
     } catch (err: any) {
       console.warn('[Photo Upload]', err.message);
-      // Fallback jika di emulator tetap simpan URI lokal
       setToastMsg('Foto tersimpan secara lokal');
     } finally {
       setIsUploadingPhoto(false);
@@ -193,7 +192,6 @@ export default function CatatScreen() {
     setToastMsg('Foto dokumentasi dihapus');
   };
 
-  // 2a: Simpan setoran dengan realtime timestamp & operator ke DB
   const handleSave = async () => {
     if (totalWeight <= 0) {
       setToastMsg('Masukkan berat setoran terlebih dahulu');
@@ -208,21 +206,8 @@ export default function CatatScreen() {
     const res = await saveSetoran(operator);
     setToastMsg(res.message);
     if (res.success) {
-      setInputWeightStr('0');
+      setInputWeightStr('');
     }
-  };
-
-  // Format tanggal & waktu realtime (Tahun, Bulan, Tanggal, Jam, Menit, Detik)
-  const formatDateTimeRealtime = (d: Date) => {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    const day = pad(d.getDate());
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const month = months[d.getMonth()];
-    const year = d.getFullYear();
-    const hours = pad(d.getHours());
-    const mins = pad(d.getMinutes());
-    const secs = pad(d.getSeconds());
-    return `${day} ${month} ${year} · ${hours}:${mins}:${secs} WIB`;
   };
 
   // Modal preview accumulation state
@@ -250,25 +235,10 @@ export default function CatatScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. Header Informasi Operator & Realtime Timestamp (2a) */}
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Clock size={12} color={SEMAR_COLORS.textMuted} />
-              <Text style={styles.infoLabel}>Waktu Realtime Sekarang</Text>
-            </View>
-            <Text style={styles.infoValue}>{formatDateTimeRealtime(currentTime)}</Text>
-          </View>
-          <View style={[styles.infoRow, { alignItems: 'flex-end' }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <User size={12} color={SEMAR_COLORS.textMuted} />
-              <Text style={styles.infoLabel}>Petugas Operator</Text>
-            </View>
-            <Text style={styles.infoValue}>{operator || 'Rina'}</Text>
-          </View>
-        </View>
+        {/* 2. Card Waktu Realtime Sekarang & Operator (Di Setiap Page di Bawah Nav Atas) */}
+        <RealtimeInfoCard />
 
-        {/* 2. Pilihan Sumber Lantai */}
+        {/* Pilihan Sumber Lantai */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Pilih Sumber Lantai</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.floorScroll}>
@@ -290,7 +260,7 @@ export default function CatatScreen() {
           </ScrollView>
         </View>
 
-        {/* 3. Input Berat Masuk & Tombol Ambil dari Sensor */}
+        {/* 1. Input Berat Masuk Terlebih Dahulu */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Berat Total Masuk (kg)</Text>
           <View style={styles.weightInputRow}>
@@ -299,7 +269,8 @@ export default function CatatScreen() {
               keyboardType="decimal-pad"
               value={inputWeightStr}
               onChangeText={handleWeightChange}
-              placeholder="0,0"
+              placeholder="Contoh: 8,5"
+              placeholderTextColor="#9CA3AF"
             />
             <TouchableOpacity
               style={styles.sensorBtn}
@@ -309,22 +280,40 @@ export default function CatatScreen() {
               <Text style={styles.sensorBtnText}>Ambil dari sensor</Text>
             </TouchableOpacity>
           </View>
+          {!isWeightEntered && (
+            <Text style={styles.inputHint}>
+              * Isi berat total masuk terlebih dahulu untuk mengaktifkan tombol sesuaikan pemilahan.
+            </Text>
+          )}
         </View>
 
-        {/* 4. Kartu Hasil Pemilahan & Akumulasi (2b) */}
+        {/* Kartu Hasil Pemilahan & Akumulasi */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Hasil Pemilahan Proporsional</Text>
+            {/* 1. Tombol Sesuaikan: Hanya aktif / bisa diklik jika berat total sudah terisi (> 0) */}
             <TouchableOpacity
-              style={styles.adjustBtn}
+              style={[
+                styles.adjustBtn,
+                !isWeightEntered && styles.adjustBtnDisabled,
+              ]}
+              activeOpacity={isWeightEntered ? 0.7 : 1}
               onPress={handleOpenEditModal}
+              disabled={!isWeightEntered}
             >
-              <Sliders size={13} color={SEMAR_COLORS.primary} />
-              <Text style={styles.adjustBtnText}>Sesuaikan</Text>
+              <Sliders size={13} color={isWeightEntered ? SEMAR_COLORS.primary : '#9CA3AF'} />
+              <Text
+                style={[
+                  styles.adjustBtnText,
+                  !isWeightEntered && styles.adjustBtnTextDisabled,
+                ]}
+              >
+                Sesuaikan
+              </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Bar Indikator Akumulasi vs Berat Masuk (2b) */}
+          {/* Bar Indikator Akumulasi vs Berat Masuk */}
           <View
             style={[
               styles.accumulationBanner,
@@ -386,7 +375,7 @@ export default function CatatScreen() {
           </View>
         </View>
 
-        {/* 5. Bau di Lorong? (2c) */}
+        {/* Bau di Lorong */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Bau di Lorong?</Text>
           <View style={styles.odorRow}>
@@ -423,7 +412,7 @@ export default function CatatScreen() {
           </View>
         </View>
 
-        {/* 6. Dokumentasi Foto (Max 5MB) (2c & 2d) */}
+        {/* Dokumentasi Foto */}
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.sectionTitle}>Dokumentasi Foto Bukti (Max 5MB)</Text>
@@ -470,7 +459,7 @@ export default function CatatScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* 7. Tombol Simpan Utama */}
+        {/* Tombol Simpan Utama */}
         <TouchableOpacity
           style={[styles.submitBtn, isSaving && { opacity: 0.7 }]}
           activeOpacity={0.85}
@@ -485,7 +474,7 @@ export default function CatatScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal Sesuaikan Hasil Pemilahan Manual (2b) */}
+      {/* Modal Sesuaikan Hasil Pemilahan Manual */}
       <BottomSheetModal
         visible={isEditSortingModalOpen}
         onClose={closeEditSortingModal}
@@ -578,7 +567,7 @@ export default function CatatScreen() {
                 </View>
                 <Text style={styles.historyWeight}>Total: {item.totalWeight} kg · Operator: {item.operator}</Text>
                 <Text style={styles.historyDetail}>
-                  Maggot: {item.maggotKg} kg · Kompos: {item.composterKg} kg · Anorganik: {item.anorganikKg} kg
+                  Maggot: {item.maggotKg} kg · Kompos: {item.composterKg || item.komposterKg || 0} kg · Anorganik: {item.anorganikKg} kg
                 </Text>
                 {item.corridorOdor && (
                   <Text style={styles.historyOdor}>Bau lorong: {item.corridorOdor}</Text>
@@ -618,30 +607,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    paddingTop: 12,
     paddingBottom: 32,
-  },
-  infoCard: {
-    backgroundColor: SEMAR_COLORS.cardBg,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: SEMAR_COLORS.border,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  infoRow: {
-    gap: 3,
-  },
-  infoLabel: {
-    fontSize: 11,
-    color: SEMAR_COLORS.textMuted,
-    fontWeight: '500',
-  },
-  infoValue: {
-    fontSize: 13,
-    color: SEMAR_COLORS.textDark,
-    fontWeight: '700',
   },
   section: {
     marginBottom: 16,
@@ -663,14 +630,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     backgroundColor: SEMAR_COLORS.primaryLight,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  adjustBtnDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
   },
   adjustBtnText: {
     fontSize: 11,
     fontWeight: '700',
     color: SEMAR_COLORS.primary,
+  },
+  adjustBtnTextDisabled: {
+    color: '#9CA3AF',
+  },
+  inputHint: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 6,
+    fontStyle: 'italic',
   },
   accumulationBanner: {
     flexDirection: 'row',

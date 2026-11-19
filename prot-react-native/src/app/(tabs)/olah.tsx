@@ -13,6 +13,7 @@ import StatusBarHeader from '@/components/common/StatusBarHeader';
 import AppHeader from '@/components/common/AppHeader';
 import BottomSheetModal from '@/components/common/BottomSheetModal';
 import Toast from '@/components/common/Toast';
+import RealtimeInfoCard from '@/components/common/RealtimeInfoCard';
 import { useOlahStore } from '@/stores/useOlahStore';
 
 const HARVEST_TYPES = [
@@ -76,6 +77,8 @@ export default function OlahScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Card Waktu Realtime Sekarang & Operator */}
+        <RealtimeInfoCard />
         {/* Tombol Aksi Cepat Tambah Panen */}
         <TouchableOpacity
           style={styles.quickAddBtn}

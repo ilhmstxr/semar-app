@@ -48,11 +48,11 @@ interface CatatState {
 }
 
 export const useCatatStore = create<CatatState>((set, get) => ({
-  selectedFloor: 'Lantai 3',
-  totalWeight: 9.8,
-  maggotKg: 7.6,
-  komposterKg: 1.7,
-  anorganikKg: 0.5,
+  selectedFloor: 'Lantai 1',
+  totalWeight: 0,
+  maggotKg: 0,
+  komposterKg: 0,
+  anorganikKg: 0,
   corridorOdor: 'Tidak',
   photoUri: null,
   photoUrl: null,
