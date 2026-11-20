@@ -409,16 +409,20 @@
 
                 <!-- 5-Step Interactive Flow Tracker -->
                 <div class="space-y-1.5 pt-1">
-                    <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
-                        5 Tahap Alur Kerja Sistem
+                    <div class="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                        <span>5 Tahap Alur Kerja Sistem</span>
+                        <span class="text-[9.5px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/80">Klik Tiap Nomor</span>
                     </div>
 
                     <div id="bin-step-1"
-                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">1</span>
-                            <div class="text-[11px] font-bold text-slate-800">Pedal Diinjak</div>
+                        class="bin-step-item p-2.5 rounded-xl border border-slate-200 bg-white/75 hover:bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all select-none group">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0 group-hover:bg-slate-300 transition-colors">1</span>
+                                <div class="text-[11px] font-bold text-slate-800">Pedal Diinjak</div>
+                            </div>
+                            <span class="text-[9.5px] font-semibold text-slate-400 group-hover:text-emerald-600 transition-colors">Aksi &rarr;</span>
                         </div>
                         <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
                             Pedal kuning turun mendorong tuas internal membuka tutup hingga 75&deg;.
@@ -426,11 +430,14 @@
                     </div>
 
                     <div id="bin-step-2"
-                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">2</span>
-                            <div class="text-[11px] font-bold text-slate-800">Sampah Masuk &amp; Tutup Rapat</div>
+                        class="bin-step-item p-2.5 rounded-xl border border-slate-200 bg-white/75 hover:bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all select-none group">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0 group-hover:bg-slate-300 transition-colors">2</span>
+                                <div class="text-[11px] font-bold text-slate-800">Sampah Masuk &amp; Tutup Rapat</div>
+                            </div>
+                            <span class="text-[9.5px] font-semibold text-slate-400 group-hover:text-emerald-600 transition-colors">Aksi &rarr;</span>
                         </div>
                         <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
                             Sampah organik jatuh ke wadah, pedal dilepas &amp; tutup kembali rapat.
@@ -438,11 +445,16 @@
                     </div>
 
                     <div id="bin-step-3"
-                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">3</span>
-                            <div class="text-[11px] font-bold text-slate-800">Sensor Berat (Bawah Tong)</div>
+                        class="bin-step-item p-2.5 rounded-xl border border-slate-200 bg-white/75 hover:bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all select-none group">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0 group-hover:bg-slate-300 transition-colors">3</span>
+                                <div class="text-[11px] font-bold text-slate-800">Sensor Berat (Bawah Tong)</div>
+                            </div>
+                            <span class="loop-badge hidden text-[9px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-emerald-300/80">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Looping
+                            </span>
                         </div>
                         <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
                             Load Cell mendeteksi massa &rarr; HX711 menguatkan sinyal ke ESP32 (GPIO32/33).
@@ -450,11 +462,16 @@
                     </div>
 
                     <div id="bin-step-4"
-                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">4</span>
-                            <div class="text-[11px] font-bold text-slate-800">Sensor Suhu (DHT22 Dalam Atas)</div>
+                        class="bin-step-item p-2.5 rounded-xl border border-slate-200 bg-white/75 hover:bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all select-none group">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0 group-hover:bg-slate-300 transition-colors">4</span>
+                                <div class="text-[11px] font-bold text-slate-800">Sensor Suhu (DHT22 Dalam Atas)</div>
+                            </div>
+                            <span class="loop-badge hidden text-[9px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-emerald-300/80">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Looping
+                            </span>
                         </div>
                         <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
                             Membaca suhu (&deg;C) &amp; kelembaban (%) fermentasi &rarr; ESP32 (GPIO4).
@@ -462,12 +479,17 @@
                     </div>
 
                     <div id="bin-step-5"
-                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span
-                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">5</span>
-                            <div class="text-[11px] font-bold text-slate-800">1 Kotak IoT (ESP32 + PCB Bolong +
-                                Step-Down)</div>
+                        class="bin-step-item p-2.5 rounded-xl border border-slate-200 bg-white/75 hover:bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all select-none group">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0 group-hover:bg-slate-300 transition-colors">5</span>
+                                <div class="text-[11px] font-bold text-slate-800">1 Kotak IoT (ESP32 + PCB Bolong +
+                                    Step-Down)</div>
+                            </div>
+                            <span class="loop-badge hidden text-[9px] font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded-md flex items-center gap-1 border border-emerald-300/80">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Looping
+                            </span>
                         </div>
                         <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
                             Memproses data sensor &amp; mengirim telemetri real-time ke aplikasi warga.
@@ -1780,7 +1802,8 @@
                     mesh: pulseMesh,
                     type: signalType,
                     progress: 0,
-                    active: false
+                    active: false,
+                    looping: false
                 });
             }
 
@@ -1897,29 +1920,111 @@
             binState.activeStep = stepNum;
             for (let i = 1; i <= 5; i++) {
                 const el = document.getElementById(`bin-step-${i}`);
+                if (!el) continue;
                 const badge = el.querySelector('.step-badge');
+                const loopBadge = el.querySelector('.loop-badge');
                 if (i === stepNum) {
-                    el.classList.add('border-emerald-500', 'bg-emerald-50', 'shadow-sm');
+                    el.classList.add('border-emerald-500', 'bg-emerald-50', 'shadow-sm', 'ring-2', 'ring-emerald-500/20');
                     el.classList.remove('border-slate-200', 'bg-white/75');
-                    badge.classList.add('bg-emerald-600', 'text-white');
-                    badge.classList.remove('bg-slate-200', 'text-slate-700');
+                    if (badge) {
+                        badge.classList.add('bg-emerald-600', 'text-white');
+                        badge.classList.remove('bg-slate-200', 'text-slate-700');
+                    }
+                    if (loopBadge && (i === 3 || i === 4 || i === 5)) {
+                        loopBadge.classList.remove('hidden');
+                    }
                 } else {
-                    el.classList.remove('border-emerald-500', 'bg-emerald-50', 'shadow-sm');
+                    el.classList.remove('border-emerald-500', 'bg-emerald-50', 'shadow-sm', 'ring-2', 'ring-emerald-500/20');
                     el.classList.add('border-slate-200', 'bg-white/75');
-                    badge.classList.remove('bg-emerald-600', 'text-white');
-                    badge.classList.add('bg-slate-200', 'text-slate-700');
+                    if (badge) {
+                        badge.classList.remove('bg-emerald-600', 'text-white');
+                        badge.classList.add('bg-slate-200', 'text-slate-700');
+                    }
+                    if (loopBadge) {
+                        loopBadge.classList.add('hidden');
+                    }
                 }
             }
         }
 
-        function triggerWireSignal(type) {
+        function stopAllPulseLoops() {
+            binWirePulses.forEach((p) => {
+                p.looping = false;
+                p.active = false;
+                if (p.mesh) p.mesh.visible = false;
+            });
+        }
+
+        function triggerWireSignal(type, looping = false) {
             binWirePulses.forEach((p) => {
                 if (p.type === type || type === 'all') {
                     p.active = true;
+                    p.looping = looping;
                     p.progress = 0;
-                    p.mesh.visible = true;
+                    if (p.mesh) p.mesh.visible = true;
+                } else if (looping) {
+                    p.looping = false;
+                    p.active = false;
+                    if (p.mesh) p.mesh.visible = false;
                 }
             });
+        }
+
+        // Interaksi Klik Per Nomor (1, 2, 3, 4, 5) dengan Looping Khusus 3, 4, 5
+        function handleStepClick(stepNum) {
+            // Batalkan timer simulasi otomatis yang sedang berjalan (jika ada)
+            if (binState.simTimeoutIds && binState.simTimeoutIds.length > 0) {
+                binState.simTimeoutIds.forEach((id) => clearTimeout(id));
+                binState.simTimeoutIds = [];
+            }
+            binState.simRunning = false;
+            const simBtn = document.getElementById('btn-sim-drop');
+            if (simBtn) simBtn.classList.remove('opacity-60', 'pointer-events-none');
+
+            setActiveBinStep(stepNum);
+
+            if (stepNum === 1) {
+                // Step 1: Pedal Diinjak (Tutup Buka 75°)
+                stopAllPulseLoops();
+                binState.pedalOpen = true;
+                binState.lidTargetAngle = -1.32;
+                binState.iotCoverOpen = false;
+                focusBinCamera(new THREE.Vector3(3.4, 2.2, 4.4), new THREE.Vector3(0.0, 1.4, 0.3), 600);
+                updateBinTelemetryUI();
+            } else if (stepNum === 2) {
+                // Step 2: Sampah Masuk & Tutup Rapat
+                stopAllPulseLoops();
+                focusBinCamera(new THREE.Vector3(2.6, 3.4, 3.2), new THREE.Vector3(0.0, 1.8, 0.0), 600);
+                spawnFallingOrganicWaste();
+                setTimeout(() => {
+                    binState.pedalOpen = false;
+                    binState.lidTargetAngle = 0;
+                    updateBinTelemetryUI();
+                }, 750);
+            } else if (stepNum === 3) {
+                // Step 3: Sensor Berat (Bawah Tong) - ANIMASI DI-LOOPING
+                binState.pedalOpen = false;
+                binState.lidTargetAngle = 0;
+                focusBinCamera(new THREE.Vector3(2.4, 0.9, 3.1), new THREE.Vector3(0.0, 0.22, 0.0), 650);
+                updateBinTelemetryUI();
+                triggerWireSignal('weight', true); // Looping sinyal Load Cell -> HX711
+            } else if (stepNum === 4) {
+                // Step 4: Sensor Suhu (DHT22 Dalam Atas) - ANIMASI DI-LOOPING
+                binState.pedalOpen = false;
+                binState.lidTargetAngle = 0;
+                if (!binState.xrayMode) toggleXrayMode(); // Aktifkan X-ray agar DHT22 di dalam terlihat jelas
+                focusBinCamera(new THREE.Vector3(-1.8, 2.5, 2.4), new THREE.Vector3(0.55, 2.05, 0.05), 650);
+                updateBinTelemetryUI();
+                triggerWireSignal('temp', true); // Looping sinyal DHT22 -> ESP32
+            } else if (stepNum === 5) {
+                // Step 5: 1 Kotak IoT (ESP32 + PCB Bolong + Step-Down) - ANIMASI DI-LOOPING
+                binState.pedalOpen = false;
+                binState.lidTargetAngle = 0;
+                binState.iotCoverOpen = true; // Buka pintu akrilik kotak enclosure IoT
+                focusBinCamera(new THREE.Vector3(3.15, 1.75, 1.45), new THREE.Vector3(0.88, 1.55, 0.0), 650);
+                updateBinTelemetryUI();
+                triggerWireSignal('power', true); // Looping telemetri & transmisi ESP32
+            }
         }
 
         function toggleManualPedal() {
@@ -1978,8 +2083,10 @@
         function runWasteDropSimulation() {
             if (binState.simRunning) return;
             binState.simRunning = true;
+            stopAllPulseLoops();
             const simBtn = document.getElementById('btn-sim-drop');
             simBtn.classList.add('opacity-60', 'pointer-events-none');
+            binState.simTimeoutIds = [];
 
             // Stage 1: Pedal pressed -> Lid opens
             setActiveBinStep(1);
@@ -1988,44 +2095,42 @@
             updateBinTelemetryUI();
 
             // Stage 2: Organic waste drops in -> Lid closes
-            setTimeout(() => {
+            binState.simTimeoutIds.push(setTimeout(() => {
                 setActiveBinStep(2);
                 spawnFallingOrganicWaste();
-            }, 900);
+            }, 900));
 
-            setTimeout(() => {
+            binState.simTimeoutIds.push(setTimeout(() => {
                 binState.pedalOpen = false;
                 binState.lidTargetAngle = 0;
                 updateBinTelemetryUI();
-            }, 2100);
+            }, 2100));
 
-            // Stage 3: Load Cell underneath detects +0.6 kg -> HX711 pulse
-            setTimeout(() => {
+            // Stage 3: Load Cell underneath detects +0.6 kg -> HX711 pulse (LOOPING)
+            binState.simTimeoutIds.push(setTimeout(() => {
                 setActiveBinStep(3);
                 binState.weightKg = Math.min(binState.maxWeightKg, +(binState.weightKg + 0.6).toFixed(2));
-                triggerWireSignal('weight');
+                triggerWireSignal('weight', true);
                 updateBinTelemetryUI();
-            }, 2900);
+            }, 2900));
 
-            // Stage 4: DHT22 reads updated organic temperature & humidity
-            setTimeout(() => {
+            // Stage 4: DHT22 reads updated organic temperature & humidity (LOOPING)
+            binState.simTimeoutIds.push(setTimeout(() => {
                 setActiveBinStep(4);
                 binState.tempC = Math.min(42, +(binState.tempC + 0.4).toFixed(1));
                 binState.humidity = Math.min(95, binState.humidity + 2);
-                triggerWireSignal('temp');
+                triggerWireSignal('temp', true);
                 updateBinTelemetryUI();
-            }, 4200);
+            }, 4400));
 
-            // Stage 5: 1 IoT Box (ESP32 + PCB Bolong + Step-Down) transmits telemetry
-            setTimeout(() => {
+            // Stage 5: 1 IoT Box (ESP32 + PCB Bolong + Step-Down) transmits telemetry (LOOPING)
+            binState.simTimeoutIds.push(setTimeout(() => {
                 setActiveBinStep(5);
-                triggerWireSignal('power');
-            }, 5400);
-
-            setTimeout(() => {
+                triggerWireSignal('power', true);
+                updateBinTelemetryUI();
                 binState.simRunning = false;
                 simBtn.classList.remove('opacity-60', 'pointer-events-none');
-            }, 6600);
+            }, 5900));
         }
 
         // Wire View 2 UI Buttons
@@ -2037,6 +2142,7 @@
             focusBinCamera(new THREE.Vector3(2.4, 0.9, 3.1), new THREE.Vector3(0.0, 0.22, 0.0));
         });
         document.getElementById('btn-bin-reset').addEventListener('click', () => {
+            stopAllPulseLoops();
             focusBinCamera(BIN_DEFAULT_POS, BIN_DEFAULT_TARGET);
         });
         document.getElementById('btn-bin-labels').addEventListener('click', (e) => {
@@ -2046,12 +2152,28 @@
             e.currentTarget.classList.toggle('text-slate-700', !binState.showLabels);
         });
         document.getElementById('btn-empty-bin').addEventListener('click', () => {
+            stopAllPulseLoops();
+            if (binState.simTimeoutIds && binState.simTimeoutIds.length > 0) {
+                binState.simTimeoutIds.forEach((id) => clearTimeout(id));
+                binState.simTimeoutIds = [];
+            }
+            binState.simRunning = false;
+            const simBtn = document.getElementById('btn-sim-drop');
+            if (simBtn) simBtn.classList.remove('opacity-60', 'pointer-events-none');
             binState.weightKg = 0.0;
             binState.tempC = 27.5;
             binState.humidity = 58;
             setActiveBinStep(0);
             updateBinTelemetryUI();
         });
+
+        // Event listener klik per nomor (1 sampai 5)
+        for (let i = 1; i <= 5; i++) {
+            const stepEl = document.getElementById(`bin-step-${i}`);
+            if (stepEl) {
+                stepEl.addEventListener('click', () => handleStepClick(i));
+            }
+        }
         document.getElementById('btn-goto-schematic').addEventListener('click', () => switchView('view-3'));
         document.getElementById('btn-toggle-v2-left').addEventListener('click', (e) => {
             const body = document.getElementById('v2-left-body');
@@ -2102,8 +2224,12 @@
                 if (!p.active) return;
                 p.progress += dt * 0.95;
                 if (p.progress >= 1) {
-                    p.active = false;
-                    p.mesh.visible = false;
+                    if (p.looping) {
+                        p.progress = 0;
+                    } else {
+                        p.active = false;
+                        p.mesh.visible = false;
+                    }
                 } else {
                     p.mesh.position.copy(p.curve.getPointAt(p.progress));
                 }
