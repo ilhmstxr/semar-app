@@ -1,0 +1,2482 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Zonasi Lahan Bersama &amp; Detail Tong Pintar IoT 3D</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Three.js Import Map (ES Modules via jsDelivr) -->
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at 50% 35%, #f4f8fc 0%, #e4edf6 60%, #d7e3ef 100%);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            touch-action: none;
+        }
+
+        #labels-layer {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        /* Floating 3D Zone Pill Badges */
+        .zone-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -100%);
+            pointer-events: auto;
+            cursor: pointer;
+            white-space: nowrap;
+            padding: 4px 11px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.01em;
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22), 0 1px 3px rgba(15, 23, 42, 0.12);
+            border: 1.5px solid rgba(255, 255, 255, 0.65);
+            transition: opacity 0.2s ease, filter 0.18s ease, box-shadow 0.18s ease;
+            will-change: transform, opacity;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .zone-label:hover {
+            filter: brightness(1.08);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.32);
+            z-index: 25;
+        }
+
+        .zone-label::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: currentColor;
+            opacity: 0.7;
+        }
+
+        /* Floating 3D Flow Step Pill Badges */
+        .flow-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            white-space: nowrap;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+            border-width: 1.5px;
+            border-style: solid;
+            transition: opacity 0.22s ease;
+            will-change: transform, opacity;
+        }
+
+        /* Glassmorphism HUD Surfaces */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.86);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.75);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+        }
+
+        /* Custom subtle scrollbar */
+        .thin-scroll::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .thin-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .thin-scroll::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 9999px;
+        }
+
+        /* Info Card transition */
+        .info-card-enter {
+            animation: slideUpFade 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Multi-View Containers */
+        .app-view {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transition: opacity 0.3s ease;
+        }
+
+        .app-view.view-hidden {
+            opacity: 0;
+            pointer-events: none;
+            visibility: hidden;
+            z-index: -1;
+        }
+
+        .app-view.view-active {
+            opacity: 1;
+            pointer-events: auto;
+            visibility: visible;
+            z-index: 1;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav-glass {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(203, 213, 225, 0.7);
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+        }
+
+        .top-nav-glass.dark-nav {
+            background: rgba(15, 23, 42, 0.92);
+            border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        /* View 2: Smart Bin 3D Studio Background & Labels */
+        #view-2 {
+            background: radial-gradient(circle at 50% 42%, #f8fafc 0%, #e6eef6 60%, #d4e1ee 100%);
+        }
+
+        #bin-canvas-container {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #bin-labels-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+            overflow: hidden;
+        }
+
+        .bin-pin-label {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -100%);
+            pointer-events: auto;
+            cursor: pointer;
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+            border: 1.5px solid rgba(255, 255, 255, 0.75);
+            transition: opacity 0.2s ease, filter 0.15s ease;
+            will-change: transform, opacity;
+        }
+
+        .bin-pin-label:hover {
+            filter: brightness(1.1);
+            z-index: 30;
+        }
+
+        /* View 3: Dark Blueprint Schematic Styling */
+        #view-3 {
+            background-color: #090f1c;
+            background-image:
+                linear-gradient(rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+                linear-gradient(rgba(56, 189, 248, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(56, 189, 248, 0.025) 1px, transparent 1px);
+            background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+            color: #e2e8f0;
+        }
+
+        .dark-glass-panel {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(71, 85, 105, 0.55);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+        }
+
+        .schem-node {
+            cursor: pointer;
+            transition: filter 0.18s ease;
+        }
+
+        .schem-node:hover {
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.55));
+        }
+
+        .schem-node.selected-node rect.node-border {
+            stroke: #38bdf8;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.8));
+        }
+
+        .wire-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: opacity 0.25s ease, stroke-width 0.2s ease;
+        }
+
+        @media (max-width: 640px) {
+            .zone-label {
+                font-size: 10px;
+                padding: 3px 8px;
+            }
+
+            .flow-label {
+                font-size: 9px;
+                padding: 1.5px 6px;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-slate-800 antialiased">
+
+    <!-- ======================================================================= -->
+    <!-- PERSISTENT TOP NAVIGATION BAR (3D & SKEMATIK SWITCHER)                    -->
+    <!-- ======================================================================= -->
+    <nav id="top-navbar" aria-label="Navigasi Halaman Utama"
+        class="fixed top-0 left-0 right-0 z-50 h-14 top-nav-glass px-3 sm:px-5 flex items-center justify-between gap-2 transition-colors duration-300">
+        <!-- Brand & Contextual Back Button -->
+        <div class="flex items-center gap-2 sm:gap-3 min-w-0">
+            <a href="3d.html" id="btn-back-to-lahan"
+                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 cursor-pointer transition-all shrink-0 no-underline"
+                title="Kembali ke Kawasan 3D">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                <span>Kembali ke Kawasan 3D</span>
+            </a>
+
+            <div class="flex items-center gap-2 min-w-0">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </div>
+                <div class="min-w-0 hidden sm:block">
+                    <div id="nav-brand-title"
+                        class="text-xs lg:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                        Detail Tong Sampah Pintar IoT
+                    </div>
+                    <div id="nav-brand-sub" class="text-[10px] text-slate-500 leading-tight truncate">
+                        Model Pedal Krisbow &bull; Load Cell Bawah &bull; DHT22 &bull; 1 Kotak IoT (ESP32)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2 View Tabs: 3D Tong Pintar & Skematik -->
+        <div class="flex items-center gap-1 bg-slate-200/70 p-1 rounded-xl shrink-0" id="nav-tabs-wrap">
+            <button type="button" data-view-tab="view-2"
+                class="nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-white text-emerald-700 shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                <span>3D Tong Pintar</span>
+            </button>
+            <button type="button" data-view-tab="view-3"
+                class="nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 text-slate-600 hover:text-slate-900">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                <span>Skematik PCB Bolong</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- VIEW 2: ALUR BUKA-TUTUP TONG PINTAR 3D (CLOSE-UP INTERAKTIF)            -->
+    <!-- ======================================================================= -->
+    <div id="view-2" class="app-view view-active">
+        <!-- Dedicated Three.js Canvas for Smart Bin -->
+        <div id="bin-canvas-container" aria-label="Model 3D Detail Tong Sampah Pintar IoT"></div>
+
+        <!-- Projected 3D Labels for Smart Bin Parts -->
+        <div id="bin-labels-layer"></div>
+
+        <!-- Left Panel: 5-Stage Alur Buka-Tutup & IoT Simulation -->
+        <aside
+            class="fixed top-16 left-3 sm:top-[4.25rem] sm:left-4 z-20 w-[calc(100vw-1.5rem)] sm:w-80 max-h-[calc(100vh-10.5rem)] flex flex-col glass-panel rounded-2xl overflow-hidden pointer-events-auto">
+            <div
+                class="px-3.5 py-2.5 bg-gradient-to-r from-amber-400/90 to-yellow-300/90 border-b border-amber-300 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">
+                        Alur Buka-Tutup Tong Pintar 3D
+                    </h2>
+                    <p class="text-[10px] font-semibold text-slate-800/80">
+                        Model Pedal Kuning + Sensor Berat Bawah + DHT22 + 1 Kotak IoT
+                    </p>
+                </div>
+                <button id="btn-toggle-v2-left" type="button"
+                    class="sm:hidden px-2 py-1 rounded-lg bg-white/70 text-[10px] font-bold text-slate-800 cursor-pointer">
+                    Lipat
+                </button>
+            </div>
+
+            <div id="v2-left-body" class="p-3 overflow-y-auto thin-scroll space-y-2.5">
+                <!-- Primary Action Buttons -->
+                <div class="grid grid-cols-1 gap-1.5">
+                    <button id="btn-sim-drop" type="button"
+                        class="w-full px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-extrabold shadow-md transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.4">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        <span>Simulasi Buang Sampah (+0.6 kg)</span>
+                    </button>
+
+                    <button id="btn-toggle-pedal" type="button"
+                        class="w-full px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-amber-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2">
+                        <span>Injak Pedal (Buka / Tutup Manual)</span>
+                    </button>
+                </div>
+
+                <!-- 5-Step Interactive Flow Tracker -->
+                <div class="space-y-1.5 pt-1">
+                    <div class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
+                        5 Tahap Alur Kerja Sistem
+                    </div>
+
+                    <div id="bin-step-1"
+                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">1</span>
+                            <div class="text-[11px] font-bold text-slate-800">Pedal Diinjak</div>
+                        </div>
+                        <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
+                            Pedal kuning turun mendorong tuas internal membuka tutup hingga 75&deg;.
+                        </p>
+                    </div>
+
+                    <div id="bin-step-2"
+                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">2</span>
+                            <div class="text-[11px] font-bold text-slate-800">Sampah Masuk &amp; Tutup Rapat</div>
+                        </div>
+                        <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
+                            Sampah organik jatuh ke wadah, pedal dilepas &amp; tutup kembali rapat.
+                        </p>
+                    </div>
+
+                    <div id="bin-step-3"
+                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">3</span>
+                            <div class="text-[11px] font-bold text-slate-800">Sensor Berat (Bawah Tong)</div>
+                        </div>
+                        <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
+                            Load Cell mendeteksi massa &rarr; HX711 menguatkan sinyal ke ESP32 (GPIO32/33).
+                        </p>
+                    </div>
+
+                    <div id="bin-step-4"
+                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">4</span>
+                            <div class="text-[11px] font-bold text-slate-800">Sensor Suhu (DHT22 Dalam Atas)</div>
+                        </div>
+                        <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
+                            Membaca suhu (&deg;C) &amp; kelembaban (%) fermentasi &rarr; ESP32 (GPIO4).
+                        </p>
+                    </div>
+
+                    <div id="bin-step-5"
+                        class="bin-step-item p-2 rounded-xl border border-slate-200 bg-white/75 transition-all">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="step-badge w-5 h-5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-extrabold flex items-center justify-center shrink-0">5</span>
+                            <div class="text-[11px] font-bold text-slate-800">1 Kotak IoT (ESP32 + PCB Bolong +
+                                Step-Down)</div>
+                        </div>
+                        <p class="text-[10px] text-slate-600 mt-0.5 pl-7 leading-snug">
+                            Memproses data sensor &amp; mengirim telemetri real-time ke aplikasi warga.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel: Real-Time IoT Telemetry Dashboard -->
+        <aside
+            class="fixed top-16 right-3 sm:top-[4.25rem] sm:right-4 z-20 hidden md:flex w-72 lg:w-80 max-h-[calc(100vh-10.5rem)] flex-col glass-panel rounded-2xl overflow-hidden pointer-events-auto"
+            id="v2-telemetry-panel">
+            <div class="px-3.5 py-2.5 bg-slate-900 text-white flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <h2 class="text-xs font-extrabold tracking-wide">Telemetri Real-Time IoT</h2>
+                </div>
+                <span
+                    class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                    ESP32 Online
+                </span>
+            </div>
+
+            <div class="p-3.5 overflow-y-auto thin-scroll space-y-3">
+                <!-- Weight & Capacity Card -->
+                <div class="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                    <div class="flex items-center justify-between text-[10.5px] font-bold text-slate-500 uppercase">
+                        <span>Sensor Berat (Load Cell Bawah)</span>
+                        <span id="tel-cap-pct" class="text-emerald-700">18%</span>
+                    </div>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                        <span id="tel-weight" class="text-2xl font-extrabold text-slate-900">1.80</span>
+                        <span class="text-xs font-bold text-slate-500">kg / 10.0 kg</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden mt-2">
+                        <div id="tel-cap-bar"
+                            class="h-full bg-gradient-to-r from-emerald-500 to-amber-500 transition-all duration-500"
+                            style="width: 18%"></div>
+                    </div>
+                </div>
+
+                <!-- Temp & Humidity Grid -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="rounded-xl bg-orange-50/80 border border-orange-200/80 p-2.5">
+                        <div class="text-[10px] font-bold uppercase text-orange-700">Suhu (DHT22)</div>
+                        <div class="text-lg font-extrabold text-slate-900 mt-0.5">
+                            <span id="tel-temp">29.4</span><span class="text-xs font-bold text-slate-500">&deg;C</span>
+                        </div>
+                        <div class="text-[9.5px] text-slate-500">Dinding Dalam Atas</div>
+                    </div>
+                    <div class="rounded-xl bg-sky-50/80 border border-sky-200/80 p-2.5">
+                        <div class="text-[10px] font-bold uppercase text-sky-700">Kelembaban</div>
+                        <div class="text-lg font-extrabold text-slate-900 mt-0.5">
+                            <span id="tel-hum">66</span><span class="text-xs font-bold text-slate-500">%</span>
+                        </div>
+                        <div class="text-[9.5px] text-slate-500">GPIO4 + Pull-Up 10k&Omega;</div>
+                    </div>
+                </div>
+
+                <!-- Status Badges -->
+                <div class="space-y-1.5 text-xs">
+                    <div
+                        class="flex items-center justify-between px-2.5 py-2 rounded-xl bg-white border border-slate-200">
+                        <span class="text-slate-500 font-medium">Status Tutup</span>
+                        <span id="tel-lid-status"
+                            class="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]">
+                            Tertutup Rapat
+                        </span>
+                    </div>
+                    <div
+                        class="flex items-center justify-between px-2.5 py-2 rounded-xl bg-white border border-slate-200">
+                        <span class="text-slate-500 font-medium">Daya 1 Kotak IoT</span>
+                        <span class="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full text-[10.5px]">
+                            12V &rarr; 5V Step-Down Aktif
+                        </span>
+                    </div>
+                    <div
+                        class="flex items-center justify-between px-2.5 py-2 rounded-xl bg-white border border-slate-200">
+                        <span class="text-slate-500 font-medium">Papan Rangkaian</span>
+                        <span
+                            class="font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-full text-[10.5px]">
+                            PCB Bolong (Perfboard)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Telemetry Actions -->
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button id="btn-empty-bin" type="button"
+                        class="px-2.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-[11px] font-bold cursor-pointer transition-all">
+                        Kosongkan Tong
+                    </button>
+                    <button id="btn-goto-schematic" type="button"
+                        class="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-[11px] font-bold cursor-pointer transition-all">
+                        Lihat Skematik &rarr;
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Bottom Controls for View 2 (Inspection Modes) -->
+        <nav aria-label="Kontrol Inspeksi Tong Pintar 3D"
+            class="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100vw-1.5rem)] pointer-events-auto">
+            <div class="glass-panel rounded-2xl p-1.5 flex items-center gap-1 sm:gap-1.5 overflow-x-auto thin-scroll">
+                <button id="btn-bin-xray" type="button"
+                    class="px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                    <span>Mode X-Ray (Transparan)</span>
+                </button>
+
+                <button id="btn-bin-iot-box" type="button"
+                    class="px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 hover:bg-blue-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                    <span>Buka Cover &amp; Zoom Kotak IoT</span>
+                </button>
+
+                <button id="btn-bin-zoom-loadcell" type="button"
+                    class="px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+                    <span>Zoom Sensor Berat Bawah</span>
+                </button>
+
+                <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+
+                <button id="btn-bin-labels" type="button"
+                    class="px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 transition-all whitespace-nowrap cursor-pointer">
+                    Label Komponen
+                </button>
+
+                <button id="btn-bin-reset" type="button"
+                    class="px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-all whitespace-nowrap cursor-pointer">
+                    Reset Kamera
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <!-- ======================================================================= -->
+
+    <!-- VIEW 3: SKEMATIK & ALUR PCB BOLONG (DARK TECHNICAL BLUEPRINT)           -->
+    <!-- ======================================================================= -->
+    <div id="view-3" class="app-view view-hidden">
+        <!-- Pan & Zoom Interactive SVG Schematic Workspace -->
+        <div id="schematic-viewport" class="absolute inset-0 pt-14 overflow-hidden cursor-grab select-none">
+            <div id="schematic-stage" class="w-full h-full flex items-center justify-center origin-center">
+                <svg id="schematic-svg" viewBox="0 0 1260 760" class="w-full h-full max-w-[1380px] max-h-[840px]"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- Perfboard (PCB Bolong) 2.54mm Copper Pad Matrix Pattern -->
+                        <pattern id="perfboard-grid" width="16" height="16" patternUnits="userSpaceOnUse">
+                            <rect width="16" height="16" fill="#14532d" />
+                            <circle cx="8" cy="8" r="4.6" fill="#d97706" stroke="#b45309" stroke-width="0.8" />
+                            <circle cx="8" cy="8" r="2.1" fill="#0b1120" />
+                        </pattern>
+                        <!-- Subtle Glow Filter for Active Signals -->
+                        <filter id="glow-dot" x="-60%" y="-60%" width="220%" height="220%">
+                            <feGaussianBlur stdDeviation="3.2" result="blur" />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+
+                    <!-- =============================================================== -->
+                    <!-- 1 KOTAK ENCLOSURE IoT BOUNDARY                                  -->
+                    <!-- =============================================================== -->
+                    <g id="node-enclosure" class="schem-node" data-comp="enclosure">
+                        <rect class="node-border" x="315" y="34" width="640" height="696" rx="18"
+                            fill="rgba(15, 23, 42, 0.72)" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="10 6" />
+                        <rect x="335" y="18" width="465" height="28" rx="8" fill="#0284c7" />
+                        <text x="567" y="36" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800"
+                            letter-spacing="0.4">
+                            1 KOTAK ENCLOSURE IoT (ESP32 + PCB Bolong + Step-Down + HX711)
+                        </text>
+                    </g>
+
+                    <!-- =============================================================== -->
+                    <!-- PCB BOLONG (PERFBOARD) REPLACING BREADBOARD                     -->
+                    <!-- =============================================================== -->
+                    <g id="node-pcb" class="schem-node" data-comp="pcb_bolong">
+                        <!-- Outer Phenolic PCB Rim -->
+                        <rect class="node-border" x="345" y="76" width="580" height="432" rx="12" fill="#166534"
+                            stroke="#4ade80" stroke-width="2" />
+                        <!-- Perforated Copper Pad Matrix -->
+                        <rect x="361" y="102" width="548" height="392" rx="4" fill="url(#perfboard-grid)"
+                            stroke="#22c55e" stroke-opacity="0.45" />
+                        <!-- Mounting Screw Holes on 4 Corners of PCB Bolong -->
+                        <circle cx="355" cy="86" r="5" fill="#0f172a" stroke="#eab308" stroke-width="2" />
+                        <circle cx="915" cy="86" r="5" fill="#0f172a" stroke="#eab308" stroke-width="2" />
+                        <circle cx="355" cy="498" r="5" fill="#0f172a" stroke="#eab308" stroke-width="2" />
+                        <circle cx="915" cy="498" r="5" fill="#0f172a" stroke="#eab308" stroke-width="2" />
+                        <!-- Silkscreen Label -->
+                        <text x="635" y="95" text-anchor="middle" fill="#bbf7d0" font-size="11.5" font-weight="800"
+                            letter-spacing="0.8">
+                            PCB BOLONG / PERFBOARD MATRIKS 2.54mm (JALUR SOLDER TIMAH — PENGGANTI BREADBOARD)
+                        </text>
+
+                        <!-- Soldered Bus Rail Labels on PCB Bolong -->
+                        <text x="370" y="123" fill="#fca5a5" font-size="9.5" font-weight="700">+5V SOLDER RAIL</text>
+                        <text x="370" y="143" fill="#fdba74" font-size="9.5" font-weight="700">+3.3V SOLDER RAIL</text>
+                        <text x="370" y="481" fill="#cbd5e1" font-size="9.5" font-weight="700">COMMON GND SOLDER
+                            RAIL</text>
+                    </g>
+
+                    <!-- =============================================================== -->
+                    <!-- WIRES & SIGNAL PATHS LAYER (RENDERED BELOW MODULES)             -->
+                    <!-- =============================================================== -->
+                    <g id="schematic-wires">
+                        <!-- === 1. ALUR DAYA (12V -> Screw Terminal -> Step-Down -> 5V -> ESP32 -> 3V3) === -->
+                        <!-- Adaptor +12V to DC Screw Terminal CENTER/PLUS -->
+                        <path id="w-pwr-1" class="wire-path" data-cat="power"
+                            d="M 995 162 L 972 162 L 972 574 L 995 574" stroke="#ef4444" stroke-width="3.5" />
+                        <!-- Adaptor GND to DC Screw Terminal SLEEVE/MINUS -->
+                        <path id="w-pwr-2" class="wire-path" data-cat="power"
+                            d="M 995 196 L 960 196 L 960 634 L 995 634" stroke="#94a3b8" stroke-width="3.5" />
+
+                        <!-- Screw Terminal PLUS (+12V) into Enclosure -> Step-Down VIN+ -->
+                        <path id="w-pwr-3" class="wire-path" data-cat="power" d="M 995 596 L 875 596" stroke="#ef4444"
+                            stroke-width="3.8" />
+                        <!-- Screw Terminal MINUS (GND) into Enclosure -> Step-Down VIN- -->
+                        <path id="w-pwr-4" class="wire-path" data-cat="power" d="M 995 656 L 875 656" stroke="#94a3b8"
+                            stroke-width="3.8" />
+
+                        <!-- Step-Down VOUT+ (5V) -> PCB Bolong 5V Rail -> ESP32 VIN -->
+                        <path id="w-pwr-5" class="wire-path" data-cat="power"
+                            d="M 520 596 L 372 596 L 372 128 L 570 128 L 570 218 L 555 218" stroke="#f97316"
+                            stroke-width="3.5" />
+                        <!-- Step-Down VOUT- (GND) -> PCB Bolong Common GND Rail -->
+                        <path id="w-pwr-6" class="wire-path" data-cat="power"
+                            d="M 520 656 L 364 656 L 364 470 L 892 470" stroke="#94a3b8" stroke-width="3.2" />
+
+                        <!-- ESP32 GND -> PCB Bolong Common GND Rail -->
+                        <path id="w-pwr-7" class="wire-path" data-cat="power" d="M 385 288 L 364 288 L 364 470"
+                            stroke="#94a3b8" stroke-width="3" />
+                        <!-- ESP32 3V3 -> PCB Bolong 3.3V Rail -->
+                        <path id="w-pwr-8" class="wire-path" data-cat="power"
+                            d="M 555 253 L 585 253 L 585 148 L 892 148" stroke="#fbbf24" stroke-width="3.2" />
+                        <!-- 3.3V Rail -> HX711 VCC -->
+                        <path id="w-pwr-9" class="wire-path" data-cat="power" d="M 730 148 L 730 278 L 705 278"
+                            stroke="#fbbf24" stroke-width="2.8" />
+                        <!-- HX711 GND -> Common GND Rail -->
+                        <path id="w-pwr-10" class="wire-path" data-cat="power" d="M 705 312 L 668 312 L 668 470"
+                            stroke="#94a3b8" stroke-width="2.8" />
+                        <!-- 3.3V Rail -> DHT22 VCC (out of enclosure) -->
+                        <path id="w-pwr-11" class="wire-path" data-cat="power" d="M 585 148 L 270 148" stroke="#fbbf24"
+                            stroke-width="2.8" />
+                        <!-- Common GND -> DHT22 GND -->
+                        <path id="w-pwr-12" class="wire-path" data-cat="power"
+                            d="M 364 470 L 296 470 L 296 178 L 270 178" stroke="#94a3b8" stroke-width="2.6" />
+
+                        <!-- === 2. ALUR SENSOR SUHU (DHT22 -> Pull-Up 10k -> ESP32 GPIO4) === -->
+                        <!-- 3.3V Rail -> Pull-Up Resistor 10k Top -->
+                        <path id="w-temp-1" class="wire-path" data-cat="temp" d="M 632 148 L 632 215" stroke="#fbbf24"
+                            stroke-width="2.6" />
+                        <!-- DHT22 DATA -> Junction with Pull-Up 10k Bottom -> ESP32 GPIO4 -->
+                        <path id="w-temp-2" class="wire-path" data-cat="temp"
+                            d="M 270 208 L 306 208 L 306 334 L 385 334" stroke="#38bdf8" stroke-width="3.4" />
+                        <path id="w-temp-3" class="wire-path" data-cat="temp" d="M 632 280 L 632 334 L 555 334"
+                            stroke="#38bdf8" stroke-width="3.0" />
+
+                        <!-- === 3. ALUR SENSOR BERAT (Load Cell Bawah Tong -> HX711 -> ESP32 GPIO32/33) === -->
+                        <!-- Load Cell E+ (Red) -> HX711 E+ -->
+                        <path id="w-wt-1" class="wire-path" data-cat="weight"
+                            d="M 270 538 L 330 538 L 330 522 L 908 522 L 908 308 L 885 308" stroke="#ef4444"
+                            stroke-width="3" />
+                        <!-- Load Cell E- (Black/Slate) -> HX711 E- -->
+                        <path id="w-wt-2" class="wire-path" data-cat="weight"
+                            d="M 270 572 L 338 572 L 338 532 L 918 532 L 918 342 L 885 342" stroke="#cbd5e1"
+                            stroke-width="2.8" />
+                        <!-- Load Cell A+ (Blue/Cyan) -> HX711 A+ -->
+                        <path id="w-wt-3" class="wire-path" data-cat="weight"
+                            d="M 270 606 L 346 606 L 346 542 L 928 542 L 928 376 L 885 376" stroke="#06b6d4"
+                            stroke-width="3" />
+                        <!-- Load Cell A- (Light Green) -> HX711 A- -->
+                        <path id="w-wt-4" class="wire-path" data-cat="weight"
+                            d="M 270 640 L 354 640 L 354 552 L 938 552 L 938 410 L 885 410" stroke="#84cc16"
+                            stroke-width="3" />
+
+                        <!-- HX711 DT -> ESP32 GPIO32 -->
+                        <path id="w-wt-5" class="wire-path" data-cat="weight" d="M 705 376 L 555 376" stroke="#10b981"
+                            stroke-width="3.4" />
+                        <!-- HX711 SCK -> ESP32 GPIO33 -->
+                        <path id="w-wt-6" class="wire-path" data-cat="weight" d="M 705 412 L 555 412" stroke="#eab308"
+                            stroke-width="3.4" />
+
+                        <!-- Solder Junction Dots on PCB Bolong -->
+                        <circle cx="585" cy="148" r="4.5" fill="#fbbf24" stroke="#0f172a" stroke-width="1.2" />
+                        <circle cx="632" cy="148" r="4.5" fill="#fbbf24" stroke="#0f172a" stroke-width="1.2" />
+                        <circle cx="730" cy="148" r="4.5" fill="#fbbf24" stroke="#0f172a" stroke-width="1.2" />
+                        <circle cx="364" cy="470" r="4.5" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.2" />
+                        <circle cx="668" cy="470" r="4.5" fill="#cbd5e1" stroke="#0f172a" stroke-width="1.2" />
+                    </g>
+
+                    <!-- =============================================================== -->
+                    <!-- ELECTRONIC COMPONENTS (CLICKABLE NODES)                         -->
+                    <!-- =============================================================== -->
+
+                    <!-- 1. ESP32 DevKit v1 (Mounted on PCB Bolong) -->
+                    <g id="node-esp32" class="schem-node" data-comp="esp32">
+                        <rect class="node-border" x="385" y="182" width="170" height="258" rx="10" fill="#1e293b"
+                            stroke="#64748b" stroke-width="1.8" />
+                        <!-- Micro USB Port -->
+                        <rect x="448" y="176" width="44" height="12" rx="2" fill="#94a3b8" />
+                        <!-- ESP-WROOM-32 Metal Shield -->
+                        <rect x="424" y="200" width="92" height="72" rx="4" fill="#cbd5e1" stroke="#64748b"
+                            stroke-width="1.5" />
+                        <text x="470" y="232" text-anchor="middle" fill="#0f172a" font-size="10.5"
+                            font-weight="800">ESP-WROOM</text>
+                        <text x="470" y="246" text-anchor="middle" fill="#334155" font-size="9.5" font-weight="700">32
+                            WiFi/BT</text>
+                        <!-- PCB Antenna -->
+                        <rect x="424" y="274" width="92" height="18" rx="2" fill="#0f172a" />
+                        <text x="470" y="308" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800">ESP32
+                            DevKit v1</text>
+                        <text x="470" y="322" text-anchor="middle" fill="#94a3b8" font-size="9.5">Disolder di PCB
+                            Bolong</text>
+
+                        <!-- Pin Labels -->
+                        <text x="394" y="292" fill="#cbd5e1" font-size="9.5" font-weight="700">GND</text>
+                        <text x="394" y="338" fill="#38bdf8" font-size="9.5" font-weight="700">GPIO4</text>
+
+                        <text x="546" y="222" text-anchor="end" fill="#fb923c" font-size="9.5" font-weight="700">VIN
+                            (5V)</text>
+                        <text x="546" y="257" text-anchor="end" fill="#fbbf24" font-size="9.5"
+                            font-weight="700">3V3</text>
+                        <text x="546" y="338" text-anchor="end" fill="#38bdf8" font-size="9.5"
+                            font-weight="700">GPIO4</text>
+                        <text x="546" y="380" text-anchor="end" fill="#34d399" font-size="9.5"
+                            font-weight="700">GPIO32</text>
+                        <text x="546" y="416" text-anchor="end" fill="#facc15" font-size="9.5"
+                            font-weight="700">GPIO33</text>
+                    </g>
+
+                    <!-- 2. Resistor Pull-Up 10k Ohm (Soldered on PCB Bolong) -->
+                    <g id="node-resistor" class="schem-node" data-comp="resistor">
+                        <rect class="node-border" x="602" y="206" width="60" height="82" rx="8"
+                            fill="rgba(15,23,42,0.75)" stroke="#94a3b8" stroke-width="1.2" />
+                        <line x1="632" y1="214" x2="632" y2="280" stroke="#cbd5e1" stroke-width="2.5" />
+                        <!-- Beige Resistor Body -->
+                        <rect x="622" y="226" width="20" height="42" rx="5" fill="#fde68a" stroke="#b45309"
+                            stroke-width="1.2" />
+                        <!-- Color Bands: Brown, Black, Orange, Gold (10k) -->
+                        <rect x="622" y="232" width="20" height="4" fill="#78350f" />
+                        <rect x="622" y="240" width="20" height="4" fill="#0f172a" />
+                        <rect x="622" y="248" width="20" height="4" fill="#ea580c" />
+                        <rect x="622" y="259" width="20" height="3.5" fill="#eab308" />
+                        <text x="632" y="200" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="800">R
+                            Pull-Up</text>
+                        <text x="632" y="302" text-anchor="middle" fill="#fde68a" font-size="10" font-weight="800">10
+                            k&Omega;</text>
+                    </g>
+
+                    <!-- 3. HX711 Load Cell Amplifier (Mounted on PCB Bolong) -->
+                    <g id="node-hx711" class="schem-node" data-comp="hx711">
+                        <rect class="node-border" x="705" y="248" width="180" height="190" rx="10" fill="#064e3b"
+                            stroke="#34d399" stroke-width="1.8" />
+                        <rect x="765" y="288" width="60" height="44" rx="3" fill="#0f172a" stroke="#475569" />
+                        <text x="795" y="314" text-anchor="middle" fill="#cbd5e1" font-size="9.5"
+                            font-weight="700">HX711 IC</text>
+                        <text x="795" y="270" text-anchor="middle" fill="#ffffff" font-size="11.5"
+                            font-weight="800">HX711 Amplifier</text>
+                        <text x="795" y="352" text-anchor="middle" fill="#a7f3d0" font-size="9">ADC 24-Bit Load
+                            Cell</text>
+
+                        <!-- Left Pins (to ESP32) -->
+                        <text x="714" y="282" fill="#fbbf24" font-size="9.5" font-weight="700">VCC</text>
+                        <text x="714" y="316" fill="#cbd5e1" font-size="9.5" font-weight="700">GND</text>
+                        <text x="714" y="380" fill="#34d399" font-size="9.5" font-weight="700">DT</text>
+                        <text x="714" y="416" fill="#facc15" font-size="9.5" font-weight="700">SCK</text>
+
+                        <!-- Right Pins (to Load Cell) -->
+                        <text x="876" y="312" text-anchor="end" fill="#f87171" font-size="9.5"
+                            font-weight="700">E+</text>
+                        <text x="876" y="346" text-anchor="end" fill="#cbd5e1" font-size="9.5"
+                            font-weight="700">E-</text>
+                        <text x="876" y="380" text-anchor="end" fill="#22d3ee" font-size="9.5"
+                            font-weight="700">A+</text>
+                        <text x="876" y="414" text-anchor="end" fill="#a3e635" font-size="9.5"
+                            font-weight="700">A-</text>
+                    </g>
+
+                    <!-- 4. Step-Down Buck Converter 12V -> 5V (Inside SAME 1 Kotak IoT) -->
+                    <g id="node-buck" class="schem-node" data-comp="buck">
+                        <rect class="node-border" x="520" y="556" width="355" height="146" rx="12" fill="#1e3a8a"
+                            stroke="#60a5fa" stroke-width="2" />
+                        <!-- Inductor + Caps + Trimmer visual details -->
+                        <circle cx="635" cy="634" r="24" fill="#1e293b" stroke="#f59e0b" stroke-width="4" />
+                        <circle cx="710" cy="628" r="16" fill="#334155" stroke="#94a3b8" stroke-width="2" />
+                        <rect x="748" y="612" width="36" height="32" rx="3" fill="#2563eb" stroke="#93c5fd"
+                            stroke-width="1.4" />
+                        <circle cx="766" cy="628" r="6" fill="#facc15" />
+
+                        <text x="698" y="582" text-anchor="middle" fill="#ffffff" font-size="12.5"
+                            font-weight="800">Step-Down Buck Converter (LM2596)</text>
+                        <text x="698" y="598" text-anchor="middle" fill="#bfdbfe" font-size="10">Penurun Tegangan 12V DC
+                            &rarr; 5V DC (Di Dalam 1 Kotak IoT)</text>
+
+                        <!-- Output Pins (Left) -->
+                        <text x="530" y="600" fill="#fb923c" font-size="10" font-weight="800">VOUT+ (5V)</text>
+                        <text x="530" y="660" fill="#cbd5e1" font-size="10" font-weight="800">VOUT- (GND)</text>
+
+                        <!-- Input Pins (Right) -->
+                        <text x="865" y="600" text-anchor="end" fill="#f87171" font-size="10" font-weight="800">VIN+
+                            (12V)</text>
+                        <text x="865" y="660" text-anchor="end" fill="#cbd5e1" font-size="10" font-weight="800">VIN-
+                            (GND)</text>
+                    </g>
+
+                    <!-- 5. DHT22 Sensor Suhu & Kelembaban (External: Dalam Tong Atas) -->
+                    <g id="node-dht22" class="schem-node" data-comp="dht22">
+                        <rect class="node-border" x="34" y="88" width="236" height="156" rx="12" fill="#1e293b"
+                            stroke="#38bdf8" stroke-width="1.8" />
+                        <!-- White Gridded DHT22 Icon -->
+                        <rect x="52" y="138" width="46" height="62" rx="4" fill="#f8fafc" stroke="#94a3b8"
+                            stroke-width="1.5" />
+                        <line x1="60" y1="150" x2="90" y2="150" stroke="#94a3b8" stroke-width="2" />
+                        <line x1="60" y1="162" x2="90" y2="162" stroke="#94a3b8" stroke-width="2" />
+                        <line x1="60" y1="174" x2="90" y2="174" stroke="#94a3b8" stroke-width="2" />
+                        <line x1="60" y1="186" x2="90" y2="186" stroke="#94a3b8" stroke-width="2" />
+
+                        <text x="152" y="114" text-anchor="middle" fill="#ffffff" font-size="12"
+                            font-weight="800">Sensor Suhu DHT22</text>
+                        <text x="152" y="130" text-anchor="middle" fill="#7dd3fc" font-size="9.5"
+                            font-weight="600">Lokasi: Dinding Dalam Atas Tong</text>
+
+                        <text x="258" y="152" text-anchor="end" fill="#fbbf24" font-size="10" font-weight="700">VCC
+                            (3.3V)</text>
+                        <text x="258" y="182" text-anchor="end" fill="#cbd5e1" font-size="10"
+                            font-weight="700">GND</text>
+                        <text x="258" y="212" text-anchor="end" fill="#38bdf8" font-size="10"
+                            font-weight="700">DATA</text>
+                    </g>
+
+                    <!-- 6. Load Cell Sensor Berat (External: Di Bawah Tong Sampah) -->
+                    <g id="node-loadcell" class="schem-node" data-comp="loadcell">
+                        <rect class="node-border" x="34" y="484" width="236" height="194" rx="12" fill="#1e293b"
+                            stroke="#22c55e" stroke-width="1.8" />
+                        <!-- Aluminum Load Cell Bar Graphic -->
+                        <rect x="50" y="566" width="96" height="28" rx="4" fill="#cbd5e1" stroke="#64748b"
+                            stroke-width="1.5" />
+                        <circle cx="88" cy="580" r="7" fill="#0f172a" />
+                        <circle cx="108" cy="580" r="7" fill="#0f172a" />
+                        <rect x="86" y="564" width="24" height="5" fill="#f8fafc" />
+
+                        <text x="152" y="510" text-anchor="middle" fill="#ffffff" font-size="12"
+                            font-weight="800">Sensor Berat Load Cell</text>
+                        <text x="152" y="526" text-anchor="middle" fill="#86efac" font-size="9.5"
+                            font-weight="600">Lokasi: DI BAWAH Tong Sampah</text>
+
+                        <text x="258" y="542" text-anchor="end" fill="#f87171" font-size="10" font-weight="700">E+
+                            (Merah)</text>
+                        <text x="258" y="576" text-anchor="end" fill="#cbd5e1" font-size="10" font-weight="700">E-
+                            (Hitam)</text>
+                        <text x="258" y="610" text-anchor="end" fill="#22d3ee" font-size="10" font-weight="700">A+
+                            (Biru)</text>
+                        <text x="258" y="644" text-anchor="end" fill="#a3e635" font-size="10" font-weight="700">A-
+                            (Hijau)</text>
+                    </g>
+
+                    <!-- 7. Adaptor 12V Barrel-Jack (External Power Source) -->
+                    <g id="node-adapter" class="schem-node" data-comp="adapter_12v">
+                        <rect class="node-border" x="995" y="106" width="232" height="128" rx="12" fill="#1e293b"
+                            stroke="#f87171" stroke-width="1.8" />
+                        <text x="1111" y="132" text-anchor="middle" fill="#ffffff" font-size="12"
+                            font-weight="800">Adaptor 12V Barrel-Jack</text>
+                        <text x="1111" y="148" text-anchor="middle" fill="#fca5a5" font-size="9.5">Sumber Daya Utama 12V
+                            DC</text>
+
+                        <text x="1006" y="166" fill="#f87171" font-size="10" font-weight="800">+12V DC</text>
+                        <text x="1006" y="200" fill="#cbd5e1" font-size="10" font-weight="800">GND (-)</text>
+                    </g>
+
+                    <!-- 8. Female DC Power Adapter 2.1mm Screw Terminal -->
+                    <g id="node-dcjack" class="schem-node" data-comp="dc_jack">
+                        <rect class="node-border" x="995" y="534" width="232" height="156" rx="12" fill="#1e293b"
+                            stroke="#fb923c" stroke-width="1.8" />
+                        <text x="1111" y="558" text-anchor="middle" fill="#ffffff" font-size="11.5"
+                            font-weight="800">Female DC Jack 2.1mm</text>
+                        <text x="1111" y="573" text-anchor="middle" fill="#fdba74" font-size="9.5">Screw Terminal Input
+                            Kotak IoT</text>
+
+                        <text x="1006" y="599" fill="#f87171" font-size="10" font-weight="700">CENTER / PLUS
+                            (+12V)</text>
+                        <text x="1006" y="659" fill="#cbd5e1" font-size="10" font-weight="700">SLEEVE / MINUS
+                            (GND)</text>
+                    </g>
+
+                    <!-- Animated Signal Pulses Container -->
+                    <g id="schematic-pulses" filter="url(#glow-dot)"></g>
+                </svg>
+            </div>
+        </div>
+
+        <!-- Top-Left Flow Filter Bar (View 3) -->
+        <div
+            class="fixed top-16 left-3 sm:top-[4.25rem] sm:left-4 z-20 max-w-[calc(100vw-1.5rem)] sm:max-w-2xl pointer-events-auto">
+            <div class="dark-glass-panel rounded-2xl p-2 flex flex-wrap items-center gap-1.5">
+                <button type="button" data-schem-filter="all"
+                    class="schem-filter-btn px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-sky-600 text-white shadow-sm cursor-pointer transition-all">
+                    Semua Alur
+                </button>
+                <button type="button" data-schem-filter="power"
+                    class="schem-filter-btn px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800/90 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition-all">
+                    1. Alur Daya (12V &rarr; 5V &rarr; 3.3V)
+                </button>
+                <button type="button" data-schem-filter="weight"
+                    class="schem-filter-btn px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800/90 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition-all">
+                    2. Sensor Berat (Load Cell &rarr; HX711)
+                </button>
+                <button type="button" data-schem-filter="temp"
+                    class="schem-filter-btn px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-slate-800/90 text-slate-300 hover:text-white border border-slate-700 cursor-pointer transition-all">
+                    3. Sensor Suhu (DHT22 &rarr; GPIO4)
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom-Left Component Inspector Card (View 3) -->
+        <section id="schem-detail-card"
+            class="fixed bottom-16 left-3 sm:bottom-4 sm:left-4 z-20 w-[calc(100vw-1.5rem)] sm:w-96 dark-glass-panel rounded-2xl p-4 pointer-events-auto">
+            <div class="flex items-start justify-between gap-2">
+                <div>
+                    <span id="sc-badge"
+                        class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40">
+                        Inspektor Skematik
+                    </span>
+                    <h3 id="sc-title" class="text-sm font-extrabold text-white mt-1">
+                        Klik Komponen untuk Detail Pinout
+                    </h3>
+                </div>
+                <span id="sc-voltage"
+                    class="text-[10.5px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                    5V / 3.3V
+                </span>
+            </div>
+            <p id="sc-desc" class="text-[11.5px] text-slate-300 mt-1.5 leading-relaxed">
+                Pilih salah satu blok (ESP32, PCB Bolong, Step-Down, HX711, DHT22, atau Load Cell) untuk melihat fungsi,
+                tegangan kerja, dan posisi fisiknya pada Tong Pintar.
+            </p>
+            <div class="mt-2.5 grid grid-cols-1 gap-1.5 text-[11px]">
+                <div class="rounded-xl bg-slate-900/80 border border-slate-700/80 px-2.5 py-2">
+                    <span class="text-sky-400 font-bold">Posisi Fisik: </span>
+                    <span id="sc-location" class="text-slate-200">1 Kotak Enclosure IoT di sisi Tong Pintar</span>
+                </div>
+                <div class="rounded-xl bg-slate-900/80 border border-slate-700/80 px-2.5 py-2">
+                    <span class="text-emerald-400 font-bold">Koneksi Pinout: </span>
+                    <span id="sc-pins" class="text-slate-200">Klik komponen pada diagram blueprint di atas.</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Collapsible Right Panel: Ringkasan Pinout & BOM (View 3) -->
+        <button id="btn-toggle-schem-bom" type="button"
+            class="fixed top-16 right-3 sm:top-[4.25rem] sm:right-4 z-30 dark-glass-panel rounded-xl px-3 py-2 text-xs font-bold text-sky-300 hover:text-white cursor-pointer pointer-events-auto">
+            Pinout &amp; BOM
+        </button>
+
+        <aside id="schem-bom-sidebar"
+            class="fixed top-28 right-3 sm:top-[7.2rem] sm:right-4 z-20 w-72 sm:w-80 max-h-[calc(100vh-11.5rem)] flex flex-col dark-glass-panel rounded-2xl overflow-hidden transition-all duration-300 pointer-events-auto">
+            <div class="p-3.5 overflow-y-auto thin-scroll space-y-3.5 text-xs">
+                <div>
+                    <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-sky-400 mb-2">
+                        Tabel Koneksi Pinout ESP32
+                    </h3>
+                    <div class="overflow-hidden rounded-xl border border-slate-700/80">
+                        <table class="w-full text-left text-[10.5px]">
+                            <thead class="bg-slate-800/90 text-slate-300">
+                                <tr>
+                                    <th class="px-2 py-1.5">Pin ESP32</th>
+                                    <th class="px-2 py-1.5">Terhubung Ke</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-200">
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-orange-400">VIN</td>
+                                    <td class="px-2 py-1.5">VOUT+ Step-Down (5V)</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-amber-300">3V3</td>
+                                    <td class="px-2 py-1.5">VCC DHT22, VCC HX711, R 10k&Omega;</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-slate-400">GND</td>
+                                    <td class="px-2 py-1.5">Common GND PCB Bolong</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-sky-400">GPIO4</td>
+                                    <td class="px-2 py-1.5">DATA DHT22 (+ Pull-Up 10k&Omega;)</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-emerald-400">GPIO32</td>
+                                    <td class="px-2 py-1.5">DT (Data) HX711</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-2 py-1.5 font-bold text-yellow-300">GPIO33</td>
+                                    <td class="px-2 py-1.5">SCK (Clock) HX711</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 mb-2">
+                        Daftar Komponen (BOM)
+                    </h3>
+                    <ul class="space-y-1.5 text-[11px] text-slate-300">
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>1. ESP32 DevKit v1</span><span class="text-sky-300 font-semibold">Kotak IoT</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>2. PCB Bolong (Perfboard)</span><span class="text-emerald-300 font-semibold">Kotak
+                                IoT</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>3. Step-Down Buck 12V&rarr;5V</span><span class="text-orange-300 font-semibold">Kotak
+                                IoT</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>4. Modul HX711 + R 10k&Omega;</span><span class="text-emerald-300 font-semibold">Kotak
+                                IoT</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>5. Sensor Berat Load Cell</span><span class="text-lime-300 font-semibold">Bawah
+                                Tong</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>6. Sensor Suhu DHT22</span><span class="text-sky-300 font-semibold">Dalam Atas</span>
+                        </li>
+                        <li class="flex justify-between gap-2 bg-slate-800/60 px-2.5 py-1.5 rounded-lg">
+                            <span>7. Adaptor 12V + DC Jack</span><span class="text-rose-300 font-semibold">Input
+                                Daya</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Bottom-Right Zoom & Pan Controls (View 3) -->
+        <div
+            class="fixed bottom-3 right-3 sm:bottom-4 sm:right-4 z-20 dark-glass-panel rounded-2xl p-1.5 flex items-center gap-1 pointer-events-auto">
+            <button id="btn-schem-zoom-out" type="button"
+                class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer">&minus;</button>
+            <span id="schem-zoom-val" class="px-2 text-xs font-bold text-slate-300 min-w-[48px] text-center">100%</span>
+            <button id="btn-schem-zoom-in" type="button"
+                class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold cursor-pointer">+</button>
+            <button id="btn-schem-reset" type="button"
+                class="px-2.5 h-8 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold cursor-pointer ml-1">Reset</button>
+        </div>
+    </div>
+
+    <!-- Main 3D Application Script -->
+
+    <!-- Main 3D & Schematic Application Script -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        /**
+         * =========================================================================
+         * 0. MULTI-VIEW NAVIGATION STATE & CONTROLLER
+         * =========================================================================
+         */
+        const appState = {
+            activeView: 'view-2' // 'view-2' (3D Bin) | 'view-3' (Schematic)
+        };
+
+        /**
+         * =========================================================================
+         * 1. PEMBANTU MATERIAL & BAYANGAN 3D
+         * =========================================================================
+         */
+        function createMat(color, roughness = 0.72, metalness = 0.05, extra = {}) {
+            return new THREE.MeshStandardMaterial({
+                color,
+                roughness,
+                metalness,
+                ...extra
+            });
+        }
+
+        function enableShadows(mesh, cast = true, receive = true) {
+            mesh.castShadow = cast;
+            mesh.receiveShadow = receive;
+            return mesh;
+        }
+
+        /**
+         * =========================================================================
+         * 12. VIEW 2: DETAIL 3D TONG PINTAR (KRISBOW PEDAL BIN + SENSOR + 1 KOTAK IoT)
+         * =========================================================================
+         */
+        const binContainer = document.getElementById('bin-canvas-container');
+        const binLabelsLayer = document.getElementById('bin-labels-layer');
+
+        const binScene = new THREE.Scene();
+        const binCamera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 80);
+        const BIN_DEFAULT_POS = new THREE.Vector3(4.1, 3.2, 5.2);
+        const BIN_DEFAULT_TARGET = new THREE.Vector3(0.0, 1.55, 0.0);
+        binCamera.position.copy(BIN_DEFAULT_POS);
+
+        const binRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+        binRenderer.setSize(window.innerWidth, window.innerHeight);
+        binRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        binRenderer.shadowMap.enabled = true;
+        binRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        binRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        binRenderer.toneMappingExposure = 1.06;
+        binContainer.appendChild(binRenderer.domElement);
+
+        const binControls = new OrbitControls(binCamera, binRenderer.domElement);
+        binControls.target.copy(BIN_DEFAULT_TARGET);
+        binControls.enableDamping = true;
+        binControls.dampingFactor = 0.07;
+        binControls.minDistance = 2.0;
+        binControls.maxDistance = 12.5;
+        binControls.maxPolarAngle = Math.PI / 2 + 0.15;
+        binControls.update();
+
+        // View 2 Lighting
+        const binHemi = new THREE.HemisphereLight(0xf8fafc, 0xb6c6d8, 1.05);
+        binScene.add(binHemi);
+        const binSun = new THREE.DirectionalLight(0xfffdf5, 1.35);
+        binSun.position.set(6, 10, 7);
+        binSun.castShadow = true;
+        binSun.shadow.mapSize.set(1024, 1024);
+        binSun.shadow.bias = -0.0005;
+        binScene.add(binSun);
+        const binRim = new THREE.DirectionalLight(0xdbeafe, 0.55);
+        binRim.position.set(-6, 5, -6);
+        binScene.add(binRim);
+
+        // View 2 Camera Tween
+        const binCamAnim = {
+            active: false,
+            startTime: 0,
+            duration: 750,
+            fromPos: new THREE.Vector3(),
+            toPos: new THREE.Vector3(),
+            fromTarget: new THREE.Vector3(),
+            toTarget: new THREE.Vector3()
+        };
+
+        function focusBinCamera(pos, target, duration = 750) {
+            binCamAnim.active = true;
+            binCamAnim.startTime = performance.now();
+            binCamAnim.duration = duration;
+            binCamAnim.fromPos.copy(binCamera.position);
+            binCamAnim.toPos.copy(pos);
+            binCamAnim.fromTarget.copy(binControls.target);
+            binCamAnim.toTarget.copy(target);
+        }
+        binControls.addEventListener('start', () => { binCamAnim.active = false; });
+
+        // Procedural Canvas Texture: White "Buang Sampah" Front Sticker (Krisbow style)
+        function createBinStickerTexture() {
+            const c = document.createElement('canvas');
+            c.width = 256;
+            c.height = 320;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#facc15';
+            ctx.fillRect(0, 0, 256, 320);
+
+            // White rounded frame
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.roundRect(18, 18, 220, 284, 24);
+            ctx.stroke();
+
+            // Header band
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(28, 30, 200, 46);
+            ctx.fillStyle = '#ca8a04';
+            ctx.font = 'bold 26px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('TONG PINTAR', 128, 62);
+
+            // Person throwing waste silhouette in white
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(152, 118, 16, 0, Math.PI * 2); // head
+            ctx.fill();
+            ctx.fillRect(142, 138, 22, 58); // torso
+            ctx.fillRect(142, 196, 9, 54);  // leg 1
+            ctx.fillRect(156, 196, 9, 54);  // leg 2
+            // Arm extending toward mini bin
+            ctx.save();
+            ctx.translate(142, 148);
+            ctx.rotate(0.5);
+            ctx.fillRect(-44, 0, 48, 12);
+            ctx.restore();
+            // Trash dots dropping
+            ctx.beginPath();
+            ctx.arc(96, 174, 5, 0, Math.PI * 2);
+            ctx.arc(88, 188, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            // Mini bin silhouette
+            ctx.beginPath();
+            ctx.moveTo(64, 198);
+            ctx.lineTo(110, 198);
+            ctx.lineTo(104, 250);
+            ctx.lineTo(70, 250);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.font = 'bold 18px Inter, sans-serif';
+            ctx.fillText('ORGANIK IoT', 128, 284);
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        // Procedural Canvas Texture: PCB Bolong (Perfboard Matrix with Copper Pads)
+        function createPerfboardTexture() {
+            const c = document.createElement('canvas');
+            c.width = 512;
+            c.height = 512;
+            const ctx = c.getContext('2d');
+            ctx.fillStyle = '#15803d'; // Classic green perfboard
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Border margin
+            ctx.strokeStyle = '#86efac';
+            ctx.lineWidth = 6;
+            ctx.strokeRect(10, 10, 492, 492);
+
+            // 2.54mm grid of copper pads + black drill holes
+            const step = 24;
+            for (let x = 28; x <= 484; x += step) {
+                for (let y = 28; y <= 484; y += step) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 7.2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#d97706';
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fill();
+                }
+            }
+
+            // Silver tin solder tracks connecting pads
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(52, 52); ctx.lineTo(460, 52);   // 5V rail
+            ctx.moveTo(52, 76); ctx.lineTo(460, 76);   // 3.3V rail
+            ctx.moveTo(52, 460); ctx.lineTo(460, 460); // GND rail
+            ctx.stroke();
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        // View 2 State & Interactive Object References
+        const binState = {
+            lidTargetAngle: 0,      // 0 = closed, -1.32 rad (~75 deg) = open
+            lidCurrentAngle: 0,
+            pedalOpen: false,
+            xrayMode: false,
+            iotCoverOpen: false,
+            iotCoverAngle: 0,
+            showLabels: true,
+            simRunning: false,
+            weightKg: 1.80,
+            maxWeightKg: 10.0,
+            tempC: 29.4,
+            humidity: 66,
+            activeStep: 0
+        };
+
+        const binXrayMaterials = [];
+        const binWirePulses = [];
+        const binLabelItems = [];
+        let binLidPivot, binPedalPivot, binPushRod, iotCoverPivot, wastePileMesh;
+        let droppingWasteItems = [];
+
+        function buildDetailedSmartBinScene() {
+            // Studio circular floor plinth
+            const plinth = enableShadows(
+                new THREE.Mesh(
+                    new THREE.CylinderGeometry(3.2, 3.4, 0.14, 48),
+                    createMat(0xdce6f2, 0.85, 0.04)
+                ),
+                false,
+                true
+            );
+            plinth.position.y = -0.07;
+            binScene.add(plinth);
+
+            // =======================================================================
+            // A. SENSOR BERAT (LOAD CELL + PLATFORM TIMBANGAN DI BAWAH TONG SAMPAH)
+            // =======================================================================
+            const scaleGroup = new THREE.Group();
+            const aluMat = createMat(0xcbd5e1, 0.32, 0.72);
+            const aluDarkMat = createMat(0x64748b, 0.4, 0.65);
+            const siliconeMat = createMat(0xf8fafc, 0.5, 0.05);
+
+            // Lower stable aluminum base plate resting on floor
+            const lowerPlate = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.72, 0.06, 1.56), aluDarkMat),
+                true,
+                true
+            );
+            lowerPlate.position.y = 0.03;
+            scaleGroup.add(lowerPlate);
+
+            // Central Aluminum Strain-Gauge Load Cell Bar (distinct dual-hole beam)
+            const loadCellBar = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.14, 0.24), aluMat),
+                true,
+                true
+            );
+            loadCellBar.position.set(0, 0.14, 0);
+            scaleGroup.add(loadCellBar);
+
+            // Strain-gauge white silicone sealant pads on top of Load Cell
+            const gaugePad = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.18), siliconeMat);
+            gaugePad.position.set(0, 0.22, 0);
+            scaleGroup.add(gaugePad);
+
+            // Spacer blocks connecting lower/upper plates to Load Cell ends
+            const spacerLeft = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.26), aluDarkMat);
+            spacerLeft.position.set(-0.42, 0.08, 0);
+            scaleGroup.add(spacerLeft);
+            const spacerRight = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.26), aluDarkMat);
+            spacerRight.position.set(0.42, 0.22, 0);
+            scaleGroup.add(spacerRight);
+
+            // Upper weighing platform plate directly supporting the yellow trash bin
+            const upperPlate = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.06, 1.5), aluMat),
+                true,
+                true
+            );
+            upperPlate.position.y = 0.27;
+            scaleGroup.add(upperPlate);
+
+            binScene.add(scaleGroup);
+
+            // =======================================================================
+            // B. TONG SAMPAH INJAK KUNING KRISBOW (TAPERED BODY + PEDAL + HINGED LID)
+            // =======================================================================
+            const binGroup = new THREE.Group();
+            binGroup.position.y = 0.30; // Sits directly on top of Load Cell platform!
+
+            const yellowBodyMat = new THREE.MeshStandardMaterial({
+                color: 0xfacc15,
+                roughness: 0.36,
+                metalness: 0.04,
+                transparent: true,
+                opacity: 1.0
+            });
+            const yellowAccentMat = new THREE.MeshStandardMaterial({
+                color: 0xeab308,
+                roughness: 0.4,
+                metalness: 0.04,
+                transparent: true,
+                opacity: 1.0
+            });
+            binXrayMaterials.push(yellowBodyMat, yellowAccentMat);
+
+            // Main tapered Krisbow bin shell (4 walls so interior is hollow & visible when open or X-Ray!)
+            const wallThick = 0.06;
+            const bodyH = 2.15;
+
+            // Bottom floor inside bin
+            const binFloor = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.06, 1.12), yellowAccentMat),
+                true,
+                true
+            );
+            binFloor.position.y = 0.03;
+            binGroup.add(binFloor);
+
+            // Back wall (-Z)
+            const backWall = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.38, bodyH, wallThick), yellowBodyMat),
+                true,
+                true
+            );
+            backWall.position.set(0, bodyH / 2, -0.58);
+            backWall.rotation.x = 0.055; // Slight outward taper upward
+            binGroup.add(backWall);
+
+            // Left & Right tapered walls with Krisbow-style vertical side ribs/columns
+            [-1, 1].forEach((side) => {
+                const sideWall = enableShadows(
+                    new THREE.Mesh(new THREE.BoxGeometry(wallThick, bodyH, 1.22), yellowBodyMat),
+                    true,
+                    true
+                );
+                sideWall.position.set(side * 0.68, bodyH / 2, 0);
+                sideWall.rotation.z = -side * 0.055;
+                binGroup.add(sideWall);
+
+                // Front corner sculpted pillar (characteristic Krisbow pedal alcove framing)
+                const pillar = enableShadows(
+                    new THREE.Mesh(new THREE.BoxGeometry(0.28, bodyH, 0.24), yellowBodyMat),
+                    true,
+                    true
+                );
+                pillar.position.set(side * 0.56, bodyH / 2, 0.54);
+                pillar.rotation.z = -side * 0.045;
+                binGroup.add(pillar);
+            });
+
+            // Front center recessed panel (leaves bottom alcove open for foot pedal!)
+            const frontUpperWall = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(0.84, bodyH - 0.34, wallThick), yellowBodyMat),
+                true,
+                true
+            );
+            frontUpperWall.position.set(0, (bodyH + 0.34) / 2, 0.52);
+            frontUpperWall.rotation.x = -0.04;
+            binGroup.add(frontUpperWall);
+
+            // Front Krisbow-style white sticker decal
+            const stickerMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.42, 0.52),
+                new THREE.MeshStandardMaterial({
+                    map: createBinStickerTexture(),
+                    roughness: 0.4,
+                    transparent: true,
+                    opacity: 1.0
+                })
+            );
+            stickerMesh.position.set(0, 1.42, 0.575);
+            stickerMesh.rotation.x = -0.04;
+            binXrayMaterials.push(stickerMesh.material);
+            binGroup.add(stickerMesh);
+
+            // Top molded rim collar around bin opening
+            const rimFront = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.11, 0.1), yellowAccentMat));
+            rimFront.position.set(0, bodyH + 0.02, 0.64);
+            binGroup.add(rimFront);
+            const rimBack = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.11, 0.1), yellowAccentMat));
+            rimBack.position.set(0, bodyH + 0.02, -0.64);
+            binGroup.add(rimBack);
+            [-1, 1].forEach((side) => {
+                const rimSide = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.11, 1.38), yellowAccentMat));
+                rimSide.position.set(side * 0.74, bodyH + 0.02, 0);
+                binGroup.add(rimSide);
+            });
+
+            // Organic Waste Pile inside the bin (scales up with weightKg!)
+            wastePileMesh = enableShadows(
+                new THREE.Mesh(
+                    new THREE.BoxGeometry(1.12, 1.0, 0.96),
+                    createMat(0x65a30d, 0.92, 0.0)
+                ),
+                true,
+                true
+            );
+            wastePileMesh.position.set(0, 0.24, 0);
+            binGroup.add(wastePileMesh);
+
+            // --- FOOT PEDAL & INTERNAL LINKAGE MECHANISM ---
+            binPedalPivot = new THREE.Group();
+            binPedalPivot.position.set(0, 0.18, 0.36);
+
+            // Yellow ribbed foot pedal sticking out the front alcove
+            const pedalPad = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.06, 0.32), createMat(0xfacc15, 0.4, 0.05)),
+                true,
+                true
+            );
+            pedalPad.position.set(0, -0.02, 0.26);
+            binPedalPivot.add(pedalPad);
+
+            // Pedal grip ridges
+            for (let r = -2; r <= 2; r++) {
+                const ridge = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.015, 0.025), createMat(0xca8a04, 0.5, 0.05));
+                ridge.position.set(0, 0.015, 0.26 + r * 0.05);
+                binPedalPivot.add(ridge);
+            }
+
+            // Horizontal steel rocker bar going from front pedal to back wall
+            const steelMat = createMat(0x475569, 0.35, 0.75);
+            const rockerArm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.96), steelMat);
+            rockerArm.position.set(0, -0.02, -0.34);
+            binPedalPivot.add(rockerArm);
+            binGroup.add(binPedalPivot);
+
+            // Vertical pushrod along back interior linking rocker arm -> lid hinge
+            binPushRod = enableShadows(
+                new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.08, 12), steelMat),
+                true,
+                true
+            );
+            binPushRod.position.set(0, 1.15, -0.49);
+            binGroup.add(binPushRod);
+
+            // --- HINGED YELLOW TOP LID ---
+            binLidPivot = new THREE.Group();
+            binLidPivot.position.set(0, bodyH + 0.08, -0.64); // Hinge axis at back top edge
+
+            // Rear cylindrical hinge barrel
+            const hingeBar = enableShadows(
+                new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 1.56, 16), yellowAccentMat),
+                true,
+                true
+            );
+            hingeBar.rotation.z = Math.PI / 2;
+            binLidPivot.add(hingeBar);
+
+            // Main lid slab
+            const lidBase = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.1, 1.38), yellowBodyMat),
+                true,
+                true
+            );
+            lidBase.position.set(0, 0.04, 0.66);
+            binLidPivot.add(lidBase);
+
+            // Raised contoured top cap (Krisbow lid style)
+            const lidTop = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.09, 1.18), yellowBodyMat),
+                true,
+                true
+            );
+            lidTop.position.set(0, 0.12, 0.64);
+            binLidPivot.add(lidTop);
+
+            binGroup.add(binLidPivot);
+
+            // =======================================================================
+            // C. SENSOR SUHU & KELEMBABAN DHT22 (DINDING DALAM BAGIAN ATAS TONG)
+            // =======================================================================
+            const dhtGroup = new THREE.Group();
+            dhtGroup.position.set(0.56, 1.82, 0.05); // Mounted inside right upper wall
+
+            const dhtBody = enableShadows(
+                new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.24, 0.18), createMat(0xf8fafc, 0.4, 0.05)),
+                true,
+                true
+            );
+            dhtGroup.add(dhtBody);
+
+            // Sensor ventilation grille lines facing inside the bin (-X)
+            for (let g = -2; g <= 2; g++) {
+                const slot = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.015, 0.018, 0.12),
+                    createMat(0x64748b, 0.6, 0.1)
+                );
+                slot.position.set(-0.052, g * 0.036, 0);
+                dhtGroup.add(slot);
+            }
+
+            // Small blue LED indicator on DHT22 breakout
+            const dhtLed = new THREE.Mesh(
+                new THREE.SphereGeometry(0.02, 10, 10),
+                new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0ea5e9, emissiveIntensity: 1.6 })
+            );
+            dhtLed.position.set(-0.05, 0.1, 0.05);
+            dhtGroup.add(dhtLed);
+
+            binGroup.add(dhtGroup);
+
+            // =======================================================================
+            // D. 1 KOTAK ENCLOSURE IoT (ESP32 + PCB BOLONG + STEP-DOWN + HX711)
+            // =======================================================================
+            const iotGroup = new THREE.Group();
+            iotGroup.position.set(0.88, 1.25, 0.0); // Mounted cleanly on right exterior side of bin
+
+            const encBackMat = createMat(0x1e293b, 0.5, 0.2);
+            const encWallMat = createMat(0x334155, 0.45, 0.25);
+
+            // Box backplate + 4 side walls (open on +X side, covered by hinged acrylic lid)
+            const encBack = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.05, 1.06, 0.88), encBackMat));
+            encBack.position.x = -0.11;
+            iotGroup.add(encBack);
+
+            const encTop = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.88), encWallMat));
+            encTop.position.set(0.02, 0.51, 0);
+            iotGroup.add(encTop);
+
+            const encBot = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.04, 0.88), encWallMat));
+            encBot.position.set(0.02, -0.51, 0);
+            iotGroup.add(encBot);
+
+            const encLeft = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.02, 0.04), encWallMat));
+            encLeft.position.set(0.02, 0, -0.42);
+            iotGroup.add(encLeft);
+
+            const encRight = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.28, 1.02, 0.04), encWallMat));
+            encRight.position.set(0.02, 0, 0.42);
+            iotGroup.add(encRight);
+
+            // --- 1. PCB BOLONG (PERFBOARD) INSIDE THE 1 IOT BOX ---
+            const perfMat = new THREE.MeshStandardMaterial({
+                map: createPerfboardTexture(),
+                roughness: 0.48,
+                metalness: 0.18
+            });
+            const perfboard = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.62, 0.74), perfMat);
+            perfboard.position.set(-0.06, 0.14, 0);
+            iotGroup.add(perfboard);
+
+            // --- 2. ESP32 DevKit v1 SOLDERED ON PCB BOLONG ---
+            const espBoard = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.44, 0.26), createMat(0x0f172a, 0.4, 0.2));
+            espBoard.position.set(-0.02, 0.16, -0.18);
+            iotGroup.add(espBoard);
+
+            const espShield = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.18, 0.18), createMat(0xcbd5e1, 0.25, 0.85));
+            espShield.position.set(0.015, 0.22, -0.18);
+            iotGroup.add(espShield);
+
+            const espLed = new THREE.Mesh(
+                new THREE.SphereGeometry(0.022, 10, 10),
+                new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 2.0 })
+            );
+            espLed.position.set(0.015, 0.02, -0.14);
+            iotGroup.add(espLed);
+
+            // --- 3. HX711 AMPLIFIER + 10k PULL-UP RESISTOR ON PCB BOLONG ---
+            const hxBoard = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.24, 0.22), createMat(0x059669, 0.45, 0.15));
+            hxBoard.position.set(-0.02, 0.16, 0.2);
+            iotGroup.add(hxBoard);
+
+            const hxChip = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 0.08), createMat(0x0f172a, 0.4, 0.1));
+            hxChip.position.set(0.008, 0.16, 0.2);
+            iotGroup.add(hxChip);
+
+            // 10k Pull-up resistor soldered next to ESP32
+            const resistorMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.12, 10), createMat(0xfde68a, 0.5, 0.1));
+            resistorMesh.position.set(-0.02, 0.22, 0.02);
+            iotGroup.add(resistorMesh);
+
+            // --- 4. STEP-DOWN BUCK CONVERTER (12V -> 5V) IN THE SAME 1 KOTAK IOT ---
+            const buckBoard = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.52), createMat(0x1d4ed8, 0.42, 0.18));
+            buckBoard.position.set(-0.05, -0.32, 0);
+            iotGroup.add(buckBoard);
+
+            // Toroidal inductor & electrolytic caps on Buck Converter
+            const inductor = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.024, 10, 18), createMat(0xd97706, 0.35, 0.6));
+            inductor.rotation.y = Math.PI / 2;
+            inductor.position.set(0.0, -0.32, -0.1);
+            iotGroup.add(inductor);
+
+            const cap1 = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.036, 0.09, 12), createMat(0x334155, 0.3, 0.6));
+            cap1.rotation.z = Math.PI / 2;
+            cap1.position.set(0.01, -0.32, 0.08);
+            iotGroup.add(cap1);
+
+            const trimmer = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.07, 0.07), createMat(0x2563eb, 0.4, 0.2));
+            trimmer.position.set(0.0, -0.32, 0.2);
+            iotGroup.add(trimmer);
+
+            // --- 5. FEMALE DC POWER JACK 2.1mm (BOTTOM INPUT OF IOT BOX) ---
+            const dcJack = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.14, 14), createMat(0x0f172a, 0.5, 0.3));
+            dcJack.position.set(-0.02, -0.58, 0.25);
+            iotGroup.add(dcJack);
+
+            // --- HINGED TRANSPARENT ACRYLIC COVER FOR IOT BOX ---
+            iotCoverPivot = new THREE.Group();
+            iotCoverPivot.position.set(0.16, 0, -0.42); // Hinged on rear edge
+
+            const coverGlass = new THREE.Mesh(
+                new THREE.BoxGeometry(0.03, 1.02, 0.84),
+                new THREE.MeshPhysicalMaterial({
+                    color: 0xbae6fd,
+                    transparent: true,
+                    opacity: 0.36,
+                    roughness: 0.12,
+                    metalness: 0.08
+                })
+            );
+            coverGlass.position.set(0, 0, 0.42);
+            iotCoverPivot.add(coverGlass);
+
+            // Cover perimeter border frame
+            const coverFrame = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.86), createMat(0x0284c7, 0.4, 0.2));
+            coverFrame.position.set(0, 0.5, 0.42);
+            iotCoverPivot.add(coverFrame);
+            const coverFrameBot = coverFrame.clone();
+            coverFrameBot.position.y = -0.5;
+            iotCoverPivot.add(coverFrameBot);
+
+            iotGroup.add(iotCoverPivot);
+            binGroup.add(iotGroup);
+
+            binScene.add(binGroup);
+
+            // =======================================================================
+            // E. KABEL & ANIMASI PULSA SINYAL (LOAD CELL -> KOTAK IOT & DHT22 -> KOTAK IOT)
+            // =======================================================================
+            function addAnimatedWire(points, colorHex, signalType) {
+                const curve = new THREE.CatmullRomCurve3(points);
+                const tube = new THREE.Mesh(
+                    new THREE.TubeGeometry(curve, 24, 0.02, 8, false),
+                    createMat(colorHex, 0.4, 0.2)
+                );
+                binScene.add(tube);
+
+                const pulseMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.055, 12, 12),
+                    new THREE.MeshStandardMaterial({
+                        color: 0xffffff,
+                        emissive: colorHex,
+                        emissiveIntensity: 2.2
+                    })
+                );
+                pulseMesh.visible = false;
+                binScene.add(pulseMesh);
+
+                binWirePulses.push({
+                    curve,
+                    mesh: pulseMesh,
+                    type: signalType,
+                    progress: 0,
+                    active: false
+                });
+            }
+
+            // Wire 1: Load Cell (Bottom) -> HX711 inside 1 IoT Box
+            addAnimatedWire([
+                new THREE.Vector3(0.45, 0.16, 0.0),
+                new THREE.Vector3(0.95, 0.22, 0.12),
+                new THREE.Vector3(0.95, 0.92, 0.18),
+                new THREE.Vector3(0.86, 1.4, 0.18)
+            ], 0x22c55e, 'weight');
+
+            // Wire 2: DHT22 (Inside Upper Wall) -> ESP32 GPIO4 inside 1 IoT Box
+            addAnimatedWire([
+                new THREE.Vector3(0.58, 2.02, 0.05),
+                new THREE.Vector3(0.75, 2.05, -0.05),
+                new THREE.Vector3(0.88, 1.85, -0.1),
+                new THREE.Vector3(0.86, 1.55, -0.14)
+            ], 0x38bdf8, 'temp');
+
+            // Wire 3: 12V Power Cable into Female DC Jack -> Step-Down Buck Converter
+            addAnimatedWire([
+                new THREE.Vector3(1.55, 0.06, 0.55),
+                new THREE.Vector3(1.12, 0.35, 0.38),
+                new THREE.Vector3(0.88, 0.72, 0.25),
+                new THREE.Vector3(0.84, 1.15, 0.12)
+            ], 0xef4444, 'power');
+
+            // =======================================================================
+            // F. FLOATING 3D LABELS FOR VIEW 2 COMPONENTS
+            // =======================================================================
+            const pinDefs = [
+                {
+                    text: 'Tutup Berengsel (Buka 75°)',
+                    color: '#ca8a04',
+                    pos: new THREE.Vector3(0, 2.75, 0.1),
+                    onClick: () => toggleManualPedal()
+                },
+                {
+                    text: 'Pedal Injak + Tuas Internal',
+                    color: '#d97706',
+                    pos: new THREE.Vector3(0, 0.55, 0.95),
+                    onClick: () => toggleManualPedal()
+                },
+                {
+                    text: 'Sensor Berat Load Cell (Bawah Tong)',
+                    color: '#16a34a',
+                    pos: new THREE.Vector3(-0.7, 0.22, 0.85),
+                    onClick: () => focusBinCamera(new THREE.Vector3(2.4, 0.85, 3.0), new THREE.Vector3(0, 0.22, 0))
+                },
+                {
+                    text: 'Sensor Suhu DHT22 (Dalam Atas)',
+                    color: '#0284c7',
+                    pos: new THREE.Vector3(0.55, 2.25, 0.2),
+                    onClick: () => {
+                        if (!binState.xrayMode) toggleXrayMode();
+                        focusBinCamera(new THREE.Vector3(-1.8, 2.5, 2.4), new THREE.Vector3(0.55, 2.05, 0.05));
+                    }
+                },
+                {
+                    text: '1 Kotak IoT (ESP32 + PCB Bolong + Step-Down)',
+                    color: '#2563eb',
+                    pos: new THREE.Vector3(1.25, 1.65, 0.0),
+                    onClick: () => openAndZoomIotBox()
+                }
+            ];
+
+            pinDefs.forEach((p) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'bin-pin-label';
+                btn.style.backgroundColor = p.color;
+                btn.textContent = p.text;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    p.onClick();
+                });
+                binLabelsLayer.appendChild(btn);
+                binLabelItems.push({ el: btn, pos: p.pos });
+            });
+
+            updateBinTelemetryUI();
+        }
+
+        buildDetailedSmartBinScene();
+
+        // Update View 2 Telemetry Panel & Organic Waste Pile height
+        function updateBinTelemetryUI() {
+            const pct = Math.min(100, Math.round((binState.weightKg / binState.maxWeightKg) * 100));
+            document.getElementById('tel-weight').textContent = binState.weightKg.toFixed(2);
+            document.getElementById('tel-cap-pct').textContent = `${pct}%`;
+            document.getElementById('tel-cap-bar').style.width = `${pct}%`;
+            document.getElementById('tel-temp').textContent = binState.tempC.toFixed(1);
+            document.getElementById('tel-hum').textContent = Math.round(binState.humidity);
+
+            const lidBadge = document.getElementById('tel-lid-status');
+            if (binState.pedalOpen) {
+                lidBadge.textContent = 'Terbuka (75°)';
+                lidBadge.className = 'font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full text-[11px]';
+            } else {
+                lidBadge.textContent = 'Tertutup Rapat';
+                lidBadge.className = 'font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full text-[11px]';
+            }
+
+            // Scale waste pile inside bin proportional to weight
+            if (wastePileMesh) {
+                const h = Math.max(0.04, (binState.weightKg / binState.maxWeightKg) * 1.55);
+                wastePileMesh.visible = binState.weightKg > 0.05;
+                wastePileMesh.scale.set(1, h, 1);
+                wastePileMesh.position.y = 0.08 + h / 2;
+            }
+        }
+
+        function setActiveBinStep(stepNum) {
+            binState.activeStep = stepNum;
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`bin-step-${i}`);
+                const badge = el.querySelector('.step-badge');
+                if (i === stepNum) {
+                    el.classList.add('border-emerald-500', 'bg-emerald-50', 'shadow-sm');
+                    el.classList.remove('border-slate-200', 'bg-white/75');
+                    badge.classList.add('bg-emerald-600', 'text-white');
+                    badge.classList.remove('bg-slate-200', 'text-slate-700');
+                } else {
+                    el.classList.remove('border-emerald-500', 'bg-emerald-50', 'shadow-sm');
+                    el.classList.add('border-slate-200', 'bg-white/75');
+                    badge.classList.remove('bg-emerald-600', 'text-white');
+                    badge.classList.add('bg-slate-200', 'text-slate-700');
+                }
+            }
+        }
+
+        function triggerWireSignal(type) {
+            binWirePulses.forEach((p) => {
+                if (p.type === type || type === 'all') {
+                    p.active = true;
+                    p.progress = 0;
+                    p.mesh.visible = true;
+                }
+            });
+        }
+
+        function toggleManualPedal() {
+            binState.pedalOpen = !binState.pedalOpen;
+            binState.lidTargetAngle = binState.pedalOpen ? -1.32 : 0; // ~75 degrees open
+            setActiveBinStep(binState.pedalOpen ? 1 : 2);
+            updateBinTelemetryUI();
+        }
+
+        function toggleXrayMode() {
+            binState.xrayMode = !binState.xrayMode;
+            const btn = document.getElementById('btn-bin-xray');
+            binXrayMaterials.forEach((m) => {
+                m.opacity = binState.xrayMode ? 0.30 : 1.0;
+                m.depthWrite = !binState.xrayMode;
+            });
+            if (binState.xrayMode) {
+                btn.classList.add('bg-emerald-600', 'text-white', 'shadow-sm');
+                btn.classList.remove('text-slate-700', 'hover:bg-slate-100');
+            } else {
+                btn.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-slate-700', 'hover:bg-slate-100');
+            }
+        }
+
+        function openAndZoomIotBox() {
+            binState.iotCoverOpen = !binState.iotCoverOpen;
+            const btn = document.getElementById('btn-bin-iot-box');
+            if (binState.iotCoverOpen) {
+                btn.textContent = 'Tutup Cover Kotak IoT';
+                btn.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+                btn.classList.remove('bg-blue-50', 'text-blue-800', 'border-blue-200');
+                focusBinCamera(new THREE.Vector3(3.15, 1.75, 1.45), new THREE.Vector3(0.88, 1.55, 0.0));
+            } else {
+                btn.textContent = 'Buka Cover & Zoom Kotak IoT';
+                btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+                btn.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+                focusBinCamera(BIN_DEFAULT_POS, BIN_DEFAULT_TARGET);
+            }
+        }
+
+        function spawnFallingOrganicWaste() {
+            const colors = [0x65a30d, 0x84cc16, 0xd97706, 0x16a34a];
+            for (let i = 0; i < 6; i++) {
+                const piece = new THREE.Mesh(
+                    new THREE.DodecahedronGeometry(0.11 + Math.random() * 0.05, 0),
+                    createMat(colors[i % colors.length], 0.8, 0.0)
+                );
+                piece.position.set((Math.random() - 0.5) * 0.55, 3.35 + i * 0.16, (Math.random() - 0.5) * 0.45);
+                binScene.add(piece);
+                droppingWasteItems.push({ mesh: piece, vy: 0 });
+            }
+        }
+
+        // 5-Step Automated Waste Drop Simulation
+        function runWasteDropSimulation() {
+            if (binState.simRunning) return;
+            binState.simRunning = true;
+            const simBtn = document.getElementById('btn-sim-drop');
+            simBtn.classList.add('opacity-60', 'pointer-events-none');
+
+            // Stage 1: Pedal pressed -> Lid opens
+            setActiveBinStep(1);
+            binState.pedalOpen = true;
+            binState.lidTargetAngle = -1.32;
+            updateBinTelemetryUI();
+
+            // Stage 2: Organic waste drops in -> Lid closes
+            setTimeout(() => {
+                setActiveBinStep(2);
+                spawnFallingOrganicWaste();
+            }, 900);
+
+            setTimeout(() => {
+                binState.pedalOpen = false;
+                binState.lidTargetAngle = 0;
+                updateBinTelemetryUI();
+            }, 2100);
+
+            // Stage 3: Load Cell underneath detects +0.6 kg -> HX711 pulse
+            setTimeout(() => {
+                setActiveBinStep(3);
+                binState.weightKg = Math.min(binState.maxWeightKg, +(binState.weightKg + 0.6).toFixed(2));
+                triggerWireSignal('weight');
+                updateBinTelemetryUI();
+            }, 2900);
+
+            // Stage 4: DHT22 reads updated organic temperature & humidity
+            setTimeout(() => {
+                setActiveBinStep(4);
+                binState.tempC = Math.min(42, +(binState.tempC + 0.4).toFixed(1));
+                binState.humidity = Math.min(95, binState.humidity + 2);
+                triggerWireSignal('temp');
+                updateBinTelemetryUI();
+            }, 4200);
+
+            // Stage 5: 1 IoT Box (ESP32 + PCB Bolong + Step-Down) transmits telemetry
+            setTimeout(() => {
+                setActiveBinStep(5);
+                triggerWireSignal('power');
+            }, 5400);
+
+            setTimeout(() => {
+                binState.simRunning = false;
+                simBtn.classList.remove('opacity-60', 'pointer-events-none');
+            }, 6600);
+        }
+
+        // Wire View 2 UI Buttons
+        document.getElementById('btn-sim-drop').addEventListener('click', runWasteDropSimulation);
+        document.getElementById('btn-toggle-pedal').addEventListener('click', toggleManualPedal);
+        document.getElementById('btn-bin-xray').addEventListener('click', toggleXrayMode);
+        document.getElementById('btn-bin-iot-box').addEventListener('click', openAndZoomIotBox);
+        document.getElementById('btn-bin-zoom-loadcell').addEventListener('click', () => {
+            focusBinCamera(new THREE.Vector3(2.4, 0.9, 3.1), new THREE.Vector3(0.0, 0.22, 0.0));
+        });
+        document.getElementById('btn-bin-reset').addEventListener('click', () => {
+            focusBinCamera(BIN_DEFAULT_POS, BIN_DEFAULT_TARGET);
+        });
+        document.getElementById('btn-bin-labels').addEventListener('click', (e) => {
+            binState.showLabels = !binState.showLabels;
+            e.currentTarget.classList.toggle('bg-emerald-600', binState.showLabels);
+            e.currentTarget.classList.toggle('text-white', binState.showLabels);
+            e.currentTarget.classList.toggle('text-slate-700', !binState.showLabels);
+        });
+        document.getElementById('btn-empty-bin').addEventListener('click', () => {
+            binState.weightKg = 0.0;
+            binState.tempC = 27.5;
+            binState.humidity = 58;
+            setActiveBinStep(0);
+            updateBinTelemetryUI();
+        });
+        document.getElementById('btn-goto-schematic').addEventListener('click', () => switchView('view-3'));
+        document.getElementById('btn-toggle-v2-left').addEventListener('click', (e) => {
+            const body = document.getElementById('v2-left-body');
+            body.classList.toggle('hidden');
+            e.currentTarget.textContent = body.classList.contains('hidden') ? 'Buka' : 'Lipat';
+        });
+
+        const binProjVec = new THREE.Vector3();
+        function updateView2(now, dt) {
+            // Smooth camera focus
+            if (binCamAnim.active) {
+                const t = Math.min((now - binCamAnim.startTime) / binCamAnim.duration, 1);
+                const ease = 1 - Math.pow(1 - t, 3);
+                binCamera.position.lerpVectors(binCamAnim.fromPos, binCamAnim.toPos, ease);
+                binControls.target.lerpVectors(binCamAnim.fromTarget, binCamAnim.toTarget, ease);
+                if (t >= 1) binCamAnim.active = false;
+            }
+            binControls.update();
+
+            // Smooth lid, pedal & pushrod kinematics
+            binState.lidCurrentAngle += (binState.lidTargetAngle - binState.lidCurrentAngle) * Math.min(1, dt * 7);
+            const openFraction = Math.abs(binState.lidCurrentAngle) / 1.32;
+            if (binLidPivot) binLidPivot.rotation.x = binState.lidCurrentAngle;
+            if (binPedalPivot) binPedalPivot.rotation.x = openFraction * 0.24; // Front pedal presses down, rear rises
+            if (binPushRod) binPushRod.position.y = 1.15 + openFraction * 0.22;
+
+            // Smooth IoT enclosure cover hinge
+            const targetCoverAngle = binState.iotCoverOpen ? -1.85 : 0;
+            binState.iotCoverAngle += (targetCoverAngle - binState.iotCoverAngle) * Math.min(1, dt * 6.5);
+            if (iotCoverPivot) iotCoverPivot.rotation.y = binState.iotCoverAngle;
+
+            // Falling waste physics
+            for (let i = droppingWasteItems.length - 1; i >= 0; i--) {
+                const item = droppingWasteItems[i];
+                item.vy -= 7.8 * dt;
+                item.mesh.position.y += item.vy * dt;
+                item.mesh.rotation.x += 2.5 * dt;
+                item.mesh.rotation.z += 1.8 * dt;
+                if (item.mesh.position.y < 0.7) {
+                    binScene.remove(item.mesh);
+                    item.mesh.geometry.dispose();
+                    droppingWasteItems.splice(i, 1);
+                }
+            }
+
+            // Wire signal pulses
+            binWirePulses.forEach((p) => {
+                if (!p.active) return;
+                p.progress += dt * 0.95;
+                if (p.progress >= 1) {
+                    p.active = false;
+                    p.mesh.visible = false;
+                } else {
+                    p.mesh.position.copy(p.curve.getPointAt(p.progress));
+                }
+            });
+
+            binRenderer.render(binScene, binCamera);
+
+            // Update projected 3D labels in View 2
+            binLabelItems.forEach((item) => {
+                if (!binState.showLabels) {
+                    item.el.style.opacity = '0';
+                    item.el.style.pointerEvents = 'none';
+                    return;
+                }
+                binProjVec.copy(item.pos).project(binCamera);
+                if (binProjVec.z > 1) {
+                    item.el.style.opacity = '0';
+                    item.el.style.pointerEvents = 'none';
+                    return;
+                }
+                const x = (binProjVec.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (-binProjVec.y * 0.5 + 0.5) * window.innerHeight;
+                item.el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`;
+                item.el.style.opacity = '1';
+                item.el.style.pointerEvents = 'auto';
+            });
+        }
+
+        /**
+         * =========================================================================
+         * 13. VIEW 3: SKEMATIK & ALUR PCB BOLONG INTERAKTIF (PAN/ZOOM + PULSA ARUS)
+         * =========================================================================
+         */
+        const SCHEM_COMPONENTS = {
+            enclosure: {
+                title: '1 Kotak Enclosure IoT Terpadu',
+                badge: 'Wadah Proteksi',
+                voltage: '12V In / 5V & 3.3V',
+                desc: 'Seluruh modul utama (ESP32, PCB Bolong, Step-Down Buck Converter 12V→5V, dan HX711) dirakit rapi dalam 1 kotak enclosure tahan cipratan di sisi tong sampah.',
+                location: 'Terpasang di dinding luar samping Tong Pintar Kuning.',
+                pins: 'Input 12V via Female DC Jack 2.1mm; Output kabel menuju DHT22 & Load Cell.'
+            },
+            pcb_bolong: {
+                title: 'PCB Bolong (Perfboard Matriks 2.54mm)',
+                badge: 'Pengganti Breadboard',
+                voltage: 'Jalur 5V, 3.3V & GND',
+                desc: 'Papan PCB berlubang dengan pad tembaga yang disolder permanen menggantikan breadboard putih agar sambungan tahan getaran saat pedal tong diinjak.',
+                location: 'Di dalam 1 Kotak Enclosure IoT.',
+                pins: 'Menyatukan dudukan header ESP32, HX711, Resistor Pull-Up 10kΩ, serta rail 5V, 3.3V, dan GND.'
+            },
+            esp32: {
+                title: 'ESP32 DevKit v1 (Mikrokontroler Wi-Fi)',
+                badge: 'Otak IoT',
+                voltage: 'VIN 5V / Logika 3.3V',
+                desc: 'Membaca data berat digital dari HX711 dan data suhu-kelembaban dari DHT22 lalu mengirimkannya ke aplikasi pencatatan warga secara nirkabel.',
+                location: 'Terpasang di atas PCB Bolong (dalam 1 Kotak IoT).',
+                pins: 'VIN←5V Buck | 3V3→VCC DHT22 & HX711 | GND→Common GND | GPIO4←DHT22 | GPIO32←HX711 DT | GPIO33←HX711 SCK.'
+            },
+            buck: {
+                title: 'Step-Down Buck Converter (12V → 5V)',
+                badge: 'Regulator Daya',
+                voltage: 'IN 12V → OUT 5V DC',
+                desc: 'Menurunkan tegangan adaptor 12V secara efisien menjadi 5V DC stabil untuk menyuplai pin VIN ESP32 di dalam kotak enclosure yang sama.',
+                location: 'Di dalam 1 Kotak Enclosure IoT bersama ESP32 & PCB Bolong.',
+                pins: 'VIN+←+12V DC Jack | VIN-←GND | VOUT+→Rail 5V & ESP32 VIN | VOUT-→Common GND.'
+            },
+            hx711: {
+                title: 'Modul HX711 Load Cell Amplifier',
+                badge: 'Penguat ADC 24-Bit',
+                voltage: '3.3V DC',
+                desc: 'Menguatkan sinyal tegangan mikro (mV) dari jembatan Wheatstone Load Cell dan mengonversinya menjadi data digital 24-bit presisi tinggi.',
+                location: 'Terpasang pada PCB Bolong di dalam 1 Kotak IoT.',
+                pins: 'VCC←3V3 | GND←GND | DT→GPIO32 | SCK→GPIO33 | E+/E-/A+/A-←Load Cell Bawah Tong.'
+            },
+            resistor: {
+                title: 'Resistor Pull-Up 10 kΩ',
+                badge: 'Komponen Pasif',
+                voltage: '3.3V Pull-Up',
+                desc: 'Menjaga jalur sinyal 1-Wire DATA sensor DHT22 tetap stabil pada logika HIGH (3.3V) saat idle sehingga pembacaan suhu bebas noise.',
+                location: 'Disolder langsung di atas PCB Bolong.',
+                pins: 'Kaki 1→Rail 3.3V | Kaki 2→Jalur DATA DHT22 & ESP32 GPIO4.'
+            },
+            dht22: {
+                title: 'Sensor Suhu & Kelembaban DHT22',
+                badge: 'Sensor Lingkungan',
+                voltage: '3.3V DC',
+                desc: 'Memantau suhu dan kelembaban di ruang dalam tong organik untuk mendeteksi laju pembusukan/fermentasi sampah.',
+                location: 'Dinding dalam bagian atas Tong Pintar.',
+                pins: 'VCC←3V3 | GND←Common GND | DATA→ESP32 GPIO4 (dengan Pull-Up 10kΩ).'
+            },
+            loadcell: {
+                title: 'Sensor Berat Load Cell (Strain Gauge)',
+                badge: 'Sensor Massa',
+                voltage: 'Eksitasi 3.3V (HX711)',
+                desc: 'Batang aluminium strain gauge yang dipasang di bawah alas tong sampah untuk menimbang akumulasi berat sampah organik secara akurat.',
+                location: 'Tepat DI BAWAH Tong Sampah (di antara dua plat timbangan).',
+                pins: 'E+ (Merah), E- (Hitam), A+ (Biru), A- (Hijau) menuju modul HX711.'
+            },
+            adapter_12v: {
+                title: 'Adaptor 12V Barrel-Jack',
+                badge: 'Sumber Daya',
+                voltage: '12V DC',
+                desc: 'Sumber catu daya utama yang menyalurkan tegangan 12V DC dari instalasi listrik/baterai surya ke terminal input tong pintar.',
+                location: 'Eksternal (terhubung ke dinding gedung/baterai surya).',
+                pins: '+12V→Screw Terminal PLUS | GND→Screw Terminal MINUS.'
+            },
+            dc_jack: {
+                title: 'Female DC Power Adapter 2.1mm',
+                badge: 'Konektor Input',
+                voltage: '12V DC',
+                desc: 'Terminal sekrup konektor DC 2.1mm yang memudahkan pemasangan & pelepasan daya 12V pada dinding kotak enclosure IoT.',
+                location: 'Sisi bawah 1 Kotak Enclosure IoT.',
+                pins: 'CENTER/PLUS→VIN+ Step-Down | SLEEVE/MINUS→VIN- Step-Down.'
+            }
+        };
+
+        const schemState = {
+            filter: 'all',
+            scale: 1,
+            tx: 0,
+            ty: 0,
+            dragging: false,
+            startX: 0,
+            startY: 0,
+            bomOpen: window.innerWidth >= 1024
+        };
+
+        const schemViewport = document.getElementById('schematic-viewport');
+        const schemStage = document.getElementById('schematic-stage');
+        const schemZoomVal = document.getElementById('schem-zoom-val');
+        const schemPulsesGroup = document.getElementById('schematic-pulses');
+        const schemWireElements = Array.from(document.querySelectorAll('#schematic-wires .wire-path'));
+        const schemPulseItems = [];
+
+        function initSchematicPulses() {
+            const svgNS = 'http://www.w3.org/2000/svg';
+            schemWireElements.forEach((pathEl) => {
+                const len = pathEl.getTotalLength();
+                const cat = pathEl.dataset.cat;
+                const color = pathEl.getAttribute('stroke') || '#38bdf8';
+                const dotCount = len > 320 ? 2 : 1;
+
+                for (let i = 0; i < dotCount; i++) {
+                    const circle = document.createElementNS(svgNS, 'circle');
+                    circle.setAttribute('r', '4.2');
+                    circle.setAttribute('fill', '#ffffff');
+                    circle.setAttribute('stroke', color);
+                    circle.setAttribute('stroke-width', '2.2');
+                    schemPulsesGroup.appendChild(circle);
+                    schemPulseItems.push({
+                        pathEl,
+                        circle,
+                        len,
+                        cat,
+                        offset: i / dotCount
+                    });
+                }
+            });
+        }
+        initSchematicPulses();
+
+        function applySchematicTransform() {
+            schemStage.style.transform = `translate3d(${schemState.tx}px, ${schemState.ty}px, 0) scale(${schemState.scale})`;
+            schemZoomVal.textContent = `${Math.round(schemState.scale * 100)}%`;
+        }
+
+        // Pan & Zoom Handlers for Schematic Viewport
+        schemViewport.addEventListener('wheel', (e) => {
+            if (appState.activeView !== 'view-3') return;
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.12 : -0.12;
+            schemState.scale = Math.max(0.55, Math.min(2.4, schemState.scale + delta));
+            applySchematicTransform();
+        }, { passive: false });
+
+        schemViewport.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.schem-node')) return;
+            schemState.dragging = true;
+            schemState.startX = e.clientX - schemState.tx;
+            schemState.startY = e.clientY - schemState.ty;
+            schemViewport.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!schemState.dragging || appState.activeView !== 'view-3') return;
+            schemState.tx = e.clientX - schemState.startX;
+            schemState.ty = e.clientY - schemState.startY;
+            applySchematicTransform();
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (schemState.dragging) {
+                schemState.dragging = false;
+                schemViewport.style.cursor = 'grab';
+            }
+        });
+
+        document.getElementById('btn-schem-zoom-in').addEventListener('click', () => {
+            schemState.scale = Math.min(2.4, schemState.scale + 0.18);
+            applySchematicTransform();
+        });
+        document.getElementById('btn-schem-zoom-out').addEventListener('click', () => {
+            schemState.scale = Math.max(0.55, schemState.scale - 0.18);
+            applySchematicTransform();
+        });
+        document.getElementById('btn-schem-reset').addEventListener('click', () => {
+            schemState.scale = 1;
+            schemState.tx = 0;
+            schemState.ty = 0;
+            applySchematicTransform();
+        });
+
+        // Schematic Flow Filters
+        const schemFilterBtns = document.querySelectorAll('.schem-filter-btn');
+        function applySchematicFilter(filter) {
+            schemState.filter = filter;
+            schemFilterBtns.forEach((btn) => {
+                const active = btn.dataset.schemFilter === filter;
+                btn.classList.toggle('bg-sky-600', active);
+                btn.classList.toggle('text-white', active);
+                btn.classList.toggle('bg-slate-800/90', !active);
+                btn.classList.toggle('text-slate-300', !active);
+            });
+
+            schemWireElements.forEach((w) => {
+                const match = filter === 'all' || w.dataset.cat === filter;
+                w.style.opacity = match ? '1' : '0.14';
+            });
+        }
+        schemFilterBtns.forEach((btn) => {
+            btn.addEventListener('click', () => applySchematicFilter(btn.dataset.schemFilter));
+        });
+
+        // Clickable Component Inspector on Schematic
+        const schemNodes = document.querySelectorAll('.schem-node');
+        function selectSchematicComponent(compKey) {
+            const info = SCHEM_COMPONENTS[compKey];
+            if (!info) return;
+            schemNodes.forEach((n) => n.classList.toggle('selected-node', n.dataset.comp === compKey));
+            document.getElementById('sc-badge').textContent = info.badge;
+            document.getElementById('sc-title').textContent = info.title;
+            document.getElementById('sc-voltage').textContent = info.voltage;
+            document.getElementById('sc-desc').textContent = info.desc;
+            document.getElementById('sc-location').textContent = info.location;
+            document.getElementById('sc-pins').textContent = info.pins;
+        }
+        schemNodes.forEach((node) => {
+            node.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectSchematicComponent(node.dataset.comp);
+            });
+        });
+
+        // BOM Panel Toggle
+        const schemBomSidebar = document.getElementById('schem-bom-sidebar');
+        function setSchemBomOpen(open) {
+            schemState.bomOpen = open;
+            schemBomSidebar.classList.toggle('opacity-0', !open);
+            schemBomSidebar.classList.toggle('pointer-events-none', !open);
+            schemBomSidebar.classList.toggle('scale-95', !open);
+        }
+        setSchemBomOpen(schemState.bomOpen);
+        document.getElementById('btn-toggle-schem-bom').addEventListener('click', () => {
+            setSchemBomOpen(!schemState.bomOpen);
+        });
+
+        let schemPulsePhase = 0;
+        function updateView3(dt) {
+            schemPulsePhase = (schemPulsePhase + dt * 0.28) % 1;
+            schemPulseItems.forEach((item) => {
+                const active = schemState.filter === 'all' || item.cat === schemState.filter;
+                item.circle.style.display = active ? 'block' : 'none';
+                if (!active) return;
+                const u = (schemPulsePhase + item.offset) % 1;
+                const pt = item.pathEl.getPointAtLength(u * item.len);
+                item.circle.setAttribute('cx', pt.x.toFixed(1));
+                item.circle.setAttribute('cy', pt.y.toFixed(1));
+            });
+        }
+
+        /**
+         * =========================================================================
+
+        /**
+         * =========================================================================
+         * 14. PENUKARAN HALAMAN (VIEW SWITCHER) & MAIN ANIMATION LOOP
+         * =========================================================================
+         */
+        const navBarEl = document.getElementById('top-navbar');
+        const navBrandTitle = document.getElementById('nav-brand-title');
+        const navBrandSub = document.getElementById('nav-brand-sub');
+        const navTabsWrap = document.getElementById('nav-tabs-wrap');
+        const navTabBtns = document.querySelectorAll('.nav-tab-btn');
+
+        function switchView(targetViewId) {
+            appState.activeView = targetViewId;
+
+            ['view-2', 'view-3'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id === targetViewId) {
+                        el.classList.remove('view-hidden');
+                        el.classList.add('view-active');
+                    } else {
+                        el.classList.remove('view-active');
+                        el.classList.add('view-hidden');
+                    }
+                }
+            });
+
+            // Sync dark/light top navbar theme
+            const isDark = targetViewId === 'view-3';
+            navBarEl.classList.toggle('dark-nav', isDark);
+            navBrandTitle.classList.toggle('text-white', isDark);
+            navBrandTitle.classList.toggle('text-slate-900', !isDark);
+            navBrandSub.classList.toggle('text-slate-400', isDark);
+            navBrandSub.classList.toggle('text-slate-500', !isDark);
+            navTabsWrap.classList.toggle('bg-slate-800', isDark);
+            navTabsWrap.classList.toggle('bg-slate-200/70', !isDark);
+
+            navTabBtns.forEach((btn) => {
+                const active = btn.dataset.viewTab === targetViewId;
+                if (active) {
+                    btn.className = isDark
+                        ? 'nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-sky-600 text-white shadow-sm'
+                        : 'nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 bg-white text-emerald-700 shadow-sm';
+                } else {
+                    btn.className = isDark
+                        ? 'nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 text-slate-300 hover:text-white'
+                        : 'nav-tab-btn px-2.5 sm:px-3.5 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 text-slate-600 hover:text-slate-900';
+                }
+            });
+
+            handleGlobalResize();
+        }
+
+        navTabBtns.forEach((btn) => {
+            btn.addEventListener('click', () => switchView(btn.dataset.viewTab));
+        });
+
+        function handleGlobalResize() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            binCamera.aspect = w / h;
+            binCamera.updateProjectionMatrix();
+            binRenderer.setSize(w, h);
+            binRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        }
+        window.addEventListener('resize', handleGlobalResize);
+
+        // Master Animation Loop (renders ONLY the active view for top FPS & zero lag)
+        let lastTime = performance.now();
+        function mainAnimate(now) {
+            requestAnimationFrame(mainAnimate);
+            const dt = Math.min((now - lastTime) / 1000, 0.05);
+            lastTime = now;
+
+            if (appState.activeView === 'view-2') {
+                updateView2(now, dt);
+            } else if (appState.activeView === 'view-3') {
+                updateView3(dt);
+            }
+        }
+
+        // Start Animation Loop once page is loaded
+        window.addEventListener('load', () => {
+            binRenderer.domElement.style.cursor = 'grab';
+            selectSchematicComponent('pcb_bolong');
+            lastTime = performance.now();
+            requestAnimationFrame(mainAnimate);
+        });
+    </script>
+</body>
+
+</html>

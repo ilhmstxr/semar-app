@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Zonasi Lahan Bersama — Model 3D Interaktif</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Three.js Import Map (ES Modules via jsDelivr) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 35%, #f4f8fc 0%, #e4edf6 60%, #d7e3ef 100%);
+      user-select: none;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    #labels-layer {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    /* Floating 3D Zone Pill Badges */
+    .zone-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -100%);
+      pointer-events: auto;
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 4px 11px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.01em;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22), 0 1px 3px rgba(15, 23, 42, 0.12);
+      border: 1.5px solid rgba(255, 255, 255, 0.65);
+      transition: opacity 0.2s ease, filter 0.18s ease, box-shadow 0.18s ease;
+      will-change: transform, opacity;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .zone-label:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.32);
+      z-index: 25;
+    }
+
+    .zone-label::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 6px;
+      background: currentColor;
+      opacity: 0.7;
+    }
+
+    /* Floating 3D Flow Step Pill Badges */
+    .flow-label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      white-space: nowrap;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.14);
+      border-width: 1.5px;
+      border-style: solid;
+      transition: opacity 0.22s ease;
+      will-change: transform, opacity;
+    }
+
+    /* Glassmorphism HUD Surfaces */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Custom subtle scrollbar */
+    .thin-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .thin-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .thin-scroll::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 9999px;
+    }
+
+    /* Info Card transition */
+    .info-card-enter {
+      animation: slideUpFade 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideUpFade {
+      from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .zone-label {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+      .flow-label {
+        font-size: 9px;
+        padding: 1.5px 6px;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased">
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container" aria-label="Model 3D Interaktif Zonasi Lahan Bersama"></div>
+
+  <!-- Projected 3D Floating HTML Labels -->
+  <div id="labels-layer"></div>
+
+  <!-- Top-Left Header HUD -->
+  <header class="fixed top-3 left-3 sm:top-4 sm:left-4 z-20 max-w-[calc(100vw-4.5rem)] sm:max-w-md pointer-events-auto">
+    <div class="glass-panel rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-3">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shrink-0">
+        <!-- Isometric Cube SVG Icon -->
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L3 7l9 5 9-5-9-5z"></path>
+          <path d="M3 17l9 5 9-5"></path>
+          <path d="M3 12l9 5 9-5"></path>
+        </svg>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-sm sm:text-base font-extrabold text-slate-900 leading-tight truncate">
+          Zonasi Lahan Bersama
+        </h1>
+        <p class="text-[11px] sm:text-xs text-slate-600 leading-snug mt-0.5">
+          Model 3D Interaktif &bull; Klik &amp; geser untuk putar, scroll untuk zoom
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Collapsible Right Sidebar Toggle Button (Always visible when collapsed or mobile) -->
+  <button
+    id="btn-toggle-sidebar"
+    type="button"
+    title="Buka / Tutup Legenda & Filter"
+    class="fixed top-3 right-3 sm:top-4 sm:right-4 z-30 glass-panel rounded-xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2 text-slate-700 hover:text-emerald-700 hover:bg-white transition-all cursor-pointer pointer-events-auto"
+  >
+    <svg id="sidebar-icon-menu" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="4" y1="6" x2="20" y2="6"></line>
+      <line x1="4" y1="12" x2="20" y2="12"></line>
+      <line x1="4" y1="18" x2="20" y2="18"></line>
+    </svg>
+    <span class="hidden sm:inline text-xs font-semibold">Legenda &amp; Alur</span>
+  </button>
+
+  <!-- Collapsible Right Sidebar (Legend & Flow Filters) -->
+  <aside
+    id="right-sidebar"
+    class="fixed top-16 right-3 sm:top-16 sm:right-4 z-20 w-72 sm:w-80 max-h-[calc(100vh-9.5rem)] flex flex-col glass-panel rounded-2xl overflow-hidden transition-all duration-300 origin-top-right pointer-events-auto"
+  >
+    <div class="p-3.5 sm:p-4 overflow-y-auto thin-scroll space-y-4">
+      <!-- Section 1: Zonasi Pemanfaatan Lahan -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Zonasi Pemanfaatan Lahan
+          </h2>
+          <span class="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+            Klik untuk fokus
+          </span>
+        </div>
+        <div id="legend-list" class="space-y-1">
+          <!-- Populated dynamically from ZONE_DATA -->
+        </div>
+      </div>
+
+      <hr class="border-slate-200/80" />
+
+      <!-- Section 2: Filter Alur -->
+      <div>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+          Filter Alur Sirkular
+        </h2>
+        <div class="grid grid-cols-2 gap-1.5" id="flow-filter-buttons">
+          <button
+            type="button"
+            data-flow-filter="all"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-slate-800 text-white border-slate-800 shadow-sm"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-400 via-orange-400 to-red-400 shrink-0"></span>
+            <span class="truncate">Semua Alur</span>
+          </button>
+          <button
+            type="button"
+            data-flow-filter="organik"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-emerald-400"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-green-600 shrink-0"></span>
+            <span class="truncate">Sampah Organik</span>
+          </button>
+          <button
+            type="button"
+            data-flow-filter="produk"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-orange-400"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-orange-600 shrink-0"></span>
+            <span class="truncate">Produk Olahan</span>
+          </button>
+          <button
+            type="button"
+            data-flow-filter="anorganik"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-red-400"
+          >
+            <span class="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
+            <span class="truncate">Sampah Anorganik</span>
+          </button>
+        </div>
+
+        <!-- Legend Arrow Key -->
+        <div class="mt-2.5 p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 space-y-1.5 text-[11px] text-slate-600">
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-5 h-1 rounded-full bg-green-600"></span>
+            <span>Alur Sampah Organik (1, 2a, 2b)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-5 h-1 rounded-full bg-orange-600"></span>
+            <span>Alur Produk Olahan (kompos, kasgot, 3–5)</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-block w-5 h-1 rounded-full bg-red-600"></span>
+            <span>Alur Sampah Anorganik (plastik, bank sampah)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini Help Footer -->
+      <div class="text-[10.5px] text-slate-500 leading-relaxed bg-blue-50/70 border border-blue-100 rounded-xl p-2.5">
+        <strong class="text-slate-700">Kontrol Navigasi:</strong> Seret kiri untuk putar 360&deg;, scroll/cubit untuk zoom, klik kanan &amp; seret untuk geser posisi.
+      </div>
+    </div>
+  </aside>
+
+  <!-- Interactive Zone Info Card (Bottom-Left) -->
+  <section
+    id="zone-info-card"
+    class="hidden fixed bottom-20 left-3 sm:bottom-20 sm:left-4 z-25 w-[calc(100vw-1.5rem)] sm:w-96 glass-panel rounded-2xl p-4 pointer-events-auto"
+    aria-live="polite"
+  >
+    <div class="flex items-start justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <span id="info-dot" class="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"></span>
+        <div class="min-w-0">
+          <span id="info-category" class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 mb-0.5">
+            Kategori
+          </span>
+          <h3 id="info-title" class="text-sm sm:text-base font-bold text-slate-900 leading-tight">
+            Nama Zona
+          </h3>
+        </div>
+      </div>
+      <button
+        id="btn-close-info"
+        type="button"
+        title="Tutup kartu informasi"
+        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+      >
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <p id="info-desc" class="text-xs text-slate-600 mt-2 leading-relaxed">
+      Deskripsi zona.
+    </p>
+
+    <div class="grid grid-cols-2 gap-2 mt-3">
+      <div class="rounded-xl bg-emerald-50/80 border border-emerald-100 p-2.5">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-0.5">
+          Input (Masukan)
+        </div>
+        <div id="info-input" class="text-[11px] font-medium text-slate-700 leading-snug">
+          -
+        </div>
+      </div>
+      <div class="rounded-xl bg-amber-50/80 border border-amber-100 p-2.5">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-0.5">
+          Output (Keluaran)
+        </div>
+        <div id="info-output" class="text-[11px] font-medium text-slate-700 leading-snug">
+          -
+        </div>
+      </div>
+    </div>
+
+    <!-- Tombol Khusus Detail Tong Pintar 3D -->
+    <div id="info-action-tong" class="hidden mt-3 pt-3 border-t border-slate-200/80">
+      <a
+        href="tong-3d.html"
+        id="btn-detail-tong"
+        class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer no-underline"
+      >
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <line x1="11" y1="8" x2="11" y2="14"></line>
+          <line x1="8" y1="11" x2="14" y2="11"></line>
+        </svg>
+        <span>Lihat Detail 3D Tong Pintar IoT &rarr;</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Bottom Control Bar -->
+  <nav
+    aria-label="Kontrol Tampilan 3D"
+    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100vw-1.5rem)] pointer-events-auto"
+  >
+    <div class="glass-panel rounded-2xl p-1.5 flex items-center gap-1 sm:gap-1.5 overflow-x-auto thin-scroll">
+      <!-- Reset Camera -->
+      <button
+        id="btn-reset-cam"
+        type="button"
+        class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        title="Kembalikan kamera ke sudut isometrik awal"
+      >
+        <svg class="w-4 h-4 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+        </svg>
+        <span>Reset Kamera</span>
+      </button>
+
+      <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+
+      <!-- Toggle Zone Labels -->
+      <button
+        id="btn-toggle-zone-labels"
+        type="button"
+        class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        title="Tampilkan atau sembunyikan label zona"
+      >
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+          <line x1="7" y1="7" x2="7.01" y2="7"></line>
+        </svg>
+        <span>Label Zona</span>
+      </button>
+
+      <!-- Toggle Flow Labels -->
+      <button
+        id="btn-toggle-flow-labels"
+        type="button"
+        class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        title="Tampilkan atau sembunyikan label langkah alur"
+      >
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <span>Label Alur</span>
+      </button>
+
+      <div class="w-px h-5 bg-slate-200 shrink-0"></div>
+
+      <!-- Pause/Play Flow Animation -->
+      <button
+        id="btn-toggle-anim"
+        type="button"
+        class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        title="Jeda atau jalankan animasi partikel alur"
+      >
+        <svg id="icon-anim-pause" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+        <svg id="icon-anim-play" class="w-4 h-4 shrink-0 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+        <span id="text-anim-btn">Jeda Alur</span>
+      </button>
+
+      <!-- Auto-Rotate 3D -->
+      <button
+        id="btn-toggle-rotate"
+        type="button"
+        class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+        title="Aktifkan atau matikan putar otomatis 3D"
+      >
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+          <path d="M21 3v5h-5"></path>
+        </svg>
+        <span>Auto-Putar</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main 3D Application Script -->
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    /**
+     * =========================================================================
+     * 1. DATA KONFIGURASI ZONA & ALUR SIRKULAR
+     * =========================================================================
+     */
+    const ZONE_DATA = {
+      tong_pintar: {
+        id: 'tong_pintar',
+        name: 'Tong Pintar tiap Lantai',
+        category: 'Pengumpulan Awal',
+        colorHex: '#16a34a',
+        desc: 'Unit tempat sampah pintar yang terpasang vertikal di setiap lantai gedung bertingkat (Lantai 1–4) untuk menampung dan mencatat data sampah organik warga secara terintegrasi.',
+        input: 'Sampah organik harian dari penghuni tiap lantai gedung.',
+        output: '1 sampah organik yang diturunkan menuju area Titik Pilah.',
+        cameraPos: new THREE.Vector3(-0.2, 8.8, 12.2),
+        cameraTarget: new THREE.Vector3(-6.2, 3.6, 3.0)
+      },
+      titik_pilah: {
+        id: 'titik_pilah',
+        name: 'Titik Pilah',
+        category: 'Pemilahan Material',
+        colorHex: '#0f766e',
+        desc: 'Meja kerja pemilahan utama di dekat dasar gedung untuk memisahkan fraksi sisa makanan lunak, bahan organik keras, serta menyaring plastik yang terselip.',
+        input: '1 sampah organik terkumpul dari Tong Pintar tiap Lantai.',
+        output: '2a sisa makanan (ke Ruang Maggot), 2b bahan keras (ke Komposter Drum), & plastik terselip (ke Sampah Anorganik).',
+        cameraPos: new THREE.Vector3(-0.5, 6.2, 10.6),
+        cameraTarget: new THREE.Vector3(-3.9, 1.0, 2.9)
+      },
+      ruang_maggot: {
+        id: 'ruang_maggot',
+        name: 'Ruang Maggot',
+        category: 'Biokonversi Organik',
+        colorHex: '#ea580c',
+        desc: 'Rak biopond bertingkat di tengah lahan untuk budidaya larva Black Soldier Fly (maggot) yang mengurai sampah sisa makanan menjadi protein dan pupuk kasgot secara cepat.',
+        input: '2a sisa makanan lunak dari Titik Pilah.',
+        output: 'Kasgot (pupuk untuk Kebun Pangan) dan 3 maggot segar (dikeringkan di Oven Surya).',
+        cameraPos: new THREE.Vector3(6.8, 6.8, 8.6),
+        cameraTarget: new THREE.Vector3(0.7, 1.5, 0.5)
+      },
+      panel_surya: {
+        id: 'panel_surya',
+        name: 'Panel Surya + Baterai (lampu)',
+        category: 'Energi Terbarukan',
+        colorHex: '#2563eb',
+        desc: 'Rangkaian panel fotovoltaik yang terpasang di atas atap Ruang Maggot beserta unit baterai penyimpan daya untuk menopang penerangan lampu lahan dan operasional alat.',
+        input: 'Radiasi sinar matahari di area atap Ruang Maggot.',
+        output: 'Energi listrik bersih tersimpan di baterai untuk lampu penerangan dan sensor pintar.',
+        cameraPos: new THREE.Vector3(5.6, 7.6, 6.8),
+        cameraTarget: new THREE.Vector3(0.9, 2.7, 0.6)
+      },
+      komposter_drum: {
+        id: 'komposter_drum',
+        name: 'Komposter Drum',
+        category: 'Pengomposan Aerob',
+        colorHex: '#7e22ce',
+        desc: 'Tiga unit drum biru komposter dengan sistem ventilasi untuk memfermentasi sampah organik berbahan keras (seperti batang sayur, daun kering, dan kulit buah keras) menjadi kompos matang.',
+        input: '2b bahan organik keras dari Titik Pilah.',
+        output: 'Pupuk kompos matang yang disalurkan langsung ke Kebun Pangan.',
+        cameraPos: new THREE.Vector3(1.6, 6.4, 5.2),
+        cameraTarget: new THREE.Vector3(-3.8, 1.1, -0.8)
+      },
+      oven_surya: {
+        id: 'oven_surya',
+        name: 'Oven Surya',
+        category: 'Pengolahan Pasca-Panen',
+        colorHex: '#d97706',
+        desc: 'Kotak pengering bertenaga surya dengan penutup kaca transparan miring untuk mengeringkan hasil panen maggot secara higienis dan hemat energi sebelum dipasarkan.',
+        input: '3 maggot hasil panen dari Ruang Maggot.',
+        output: '4 maggot kering bernilai ekonomi siap dijual keluar area lahan.',
+        cameraPos: new THREE.Vector3(9.6, 6.2, 9.4),
+        cameraTarget: new THREE.Vector3(4.5, 1.1, 3.4)
+      },
+      kebun_pangan: {
+        id: 'kebun_pangan',
+        name: 'Kebun Pangan',
+        category: 'Ketahanan Pangan Warga',
+        colorHex: '#15803d',
+        desc: 'Deretan bedengan kayu berisi tanah subur yang ditanami aneka sayuran hijau segar dengan memanfaatkan pupuk organik hasil komposter dan kasgot dari sistem sirkular.',
+        input: 'Pupuk kompos dari Komposter Drum & kasgot dari Ruang Maggot.',
+        output: '5 sayur segar hasil panen yang dibagikan kembali untuk warga gedung.',
+        cameraPos: new THREE.Vector3(7.4, 8.6, 4.4),
+        cameraTarget: new THREE.Vector3(2.2, 0.8, -3.5)
+      },
+      sampah_anorganik: {
+        id: 'sampah_anorganik',
+        name: 'Sampah Anorganik',
+        category: 'Daur Ulang & Bank Sampah',
+        colorHex: '#dc2626',
+        desc: 'Shelter semi-transparan dengan 4 wadah terpilah berkode warna untuk menampung plastik, kertas, logam, dan residu daur ulang sebelum disalurkan ke bank sampah.',
+        input: 'Plastik terselip dari Titik Pilah serta sampah anorganik terpilah warga.',
+        output: 'Material daur ulang bernilai jual yang dikirim ke bank sampah.',
+        cameraPos: new THREE.Vector3(2.4, 6.2, 11.8),
+        cameraTarget: new THREE.Vector3(-1.3, 1.0, 4.5)
+      }
+    };
+
+    const ZONE_ORDER = [
+      'tong_pintar',
+      'titik_pilah',
+      'ruang_maggot',
+      'panel_surya',
+      'komposter_drum',
+      'oven_surya',
+      'kebun_pangan',
+      'sampah_anorganik'
+    ];
+
+    // 7 Floating 3D main zone badges matching the architectural diagram
+    const FLOATING_ZONE_LABELS = [
+      { zoneId: 'tong_pintar', text: 'Tong Pintar (Klik Detail 3D)', color: '#16a34a', pos: new THREE.Vector3(-6.1, 7.6, 3.0) },
+      { zoneId: 'titik_pilah', text: 'Titik Pilah', color: '#0f766e', pos: new THREE.Vector3(-3.9, 2.2, 3.0) },
+      { zoneId: 'komposter_drum', text: 'Komposter Drum', color: '#7e22ce', pos: new THREE.Vector3(-3.8, 2.7, -0.8) },
+      { zoneId: 'ruang_maggot', text: 'Ruang Maggot + Panel Surya & Baterai', color: '#ea580c', pos: new THREE.Vector3(0.8, 3.85, 0.5) },
+      { zoneId: 'kebun_pangan', text: 'Kebun Pangan', color: '#15803d', pos: new THREE.Vector3(3.6, 2.4, -4.4) },
+      { zoneId: 'oven_surya', text: 'Oven Surya', color: '#d97706', pos: new THREE.Vector3(4.6, 2.6, 3.4) },
+      { zoneId: 'sampah_anorganik', text: 'Sampah Anorganik', color: '#dc2626', pos: new THREE.Vector3(-1.3, 2.4, 4.6) }
+    ];
+
+    const FLOW_COLORS = {
+      organik: { hex: 0x16a34a, css: '#16a34a', textCss: '#15803d' },
+      produk: { hex: 0xea580c, css: '#ea580c', textCss: '#c2410c' },
+      anorganik: { hex: 0xdc2626, css: '#dc2626', textCss: '#b91c1c' }
+    };
+
+    // Exact 10 circular waste & product flow paths
+    const FLOW_DEFINITIONS = [
+      // 1. Sampah Organik (Green)
+      {
+        id: 'flow_1',
+        category: 'organik',
+        label: '1 sampah organik',
+        points: [
+          new THREE.Vector3(-5.95, 1.05, 3.0),
+          new THREE.Vector3(-5.45, 0.85, 3.1),
+          new THREE.Vector3(-4.85, 1.02, 2.95)
+        ],
+        labelT: 0.45,
+        labelOffsetY: 0.48,
+        beadCount: 3
+      },
+      {
+        id: 'flow_2a',
+        category: 'organik',
+        label: '2a sisa makanan',
+        points: [
+          new THREE.Vector3(-2.75, 1.05, 2.55),
+          new THREE.Vector3(-1.85, 1.28, 1.95),
+          new THREE.Vector3(-1.15, 1.25, 1.15)
+        ],
+        labelT: 0.5,
+        labelOffsetY: 0.45,
+        beadCount: 3
+      },
+      {
+        id: 'flow_2b',
+        category: 'organik',
+        label: '2b bahan keras',
+        points: [
+          new THREE.Vector3(-3.85, 1.05, 2.15),
+          new THREE.Vector3(-3.95, 1.48, 1.15),
+          new THREE.Vector3(-3.85, 1.38, 0.15)
+        ],
+        labelT: 0.5,
+        labelOffsetY: 0.45,
+        beadCount: 3
+      },
+      // 2. Produk Olahan (Orange)
+      {
+        id: 'flow_kompos',
+        category: 'produk',
+        label: 'kompos',
+        points: [
+          new THREE.Vector3(-3.6, 1.45, -1.65),
+          new THREE.Vector3(-3.2, 1.65, -2.9),
+          new THREE.Vector3(-2.5, 0.95, -4.15)
+        ],
+        labelT: 0.5,
+        labelOffsetY: 0.42,
+        beadCount: 3
+      },
+      {
+        id: 'flow_kasgot',
+        category: 'produk',
+        label: 'kasgot',
+        points: [
+          new THREE.Vector3(1.2, 1.35, -0.75),
+          new THREE.Vector3(1.45, 1.58, -1.6),
+          new THREE.Vector3(1.6, 0.95, -2.45)
+        ],
+        labelT: 0.5,
+        labelOffsetY: 0.42,
+        beadCount: 3
+      },
+      {
+        id: 'flow_3',
+        category: 'produk',
+        label: '3 maggot',
+        points: [
+          new THREE.Vector3(2.65, 1.25, 1.25),
+          new THREE.Vector3(3.35, 1.55, 2.15),
+          new THREE.Vector3(3.85, 1.35, 2.85)
+        ],
+        labelT: 0.48,
+        labelOffsetY: 0.45,
+        beadCount: 3
+      },
+      {
+        id: 'flow_4',
+        category: 'produk',
+        label: '4 dijual',
+        points: [
+          new THREE.Vector3(4.85, 1.15, 4.25),
+          new THREE.Vector3(5.05, 0.95, 5.8),
+          new THREE.Vector3(5.25, 0.55, 7.65)
+        ],
+        labelT: 0.62,
+        labelOffsetY: 0.42,
+        beadCount: 4
+      },
+      {
+        id: 'flow_5',
+        category: 'produk',
+        label: '5 sayur untuk warga',
+        points: [
+          new THREE.Vector3(-2.6, 1.0, -4.55),
+          new THREE.Vector3(-4.1, 3.1, -4.2),
+          new THREE.Vector3(-5.2, 4.2, -3.1),
+          new THREE.Vector3(-6.05, 3.6, -2.2)
+        ],
+        labelT: 0.52,
+        labelOffsetY: 0.5,
+        beadCount: 4
+      },
+      // 3. Sampah Anorganik (Red)
+      {
+        id: 'flow_plastik',
+        category: 'anorganik',
+        label: 'plastik terselip',
+        points: [
+          new THREE.Vector3(-3.15, 1.0, 3.35),
+          new THREE.Vector3(-2.75, 1.22, 3.95),
+          new THREE.Vector3(-2.35, 1.02, 4.45)
+        ],
+        labelT: 0.5,
+        labelOffsetY: 0.42,
+        beadCount: 3
+      },
+      {
+        id: 'flow_bank',
+        category: 'anorganik',
+        label: 'ke bank sampah',
+        points: [
+          new THREE.Vector3(-2.85, 0.85, 5.0),
+          new THREE.Vector3(-4.1, 0.72, 6.0),
+          new THREE.Vector3(-5.4, 0.48, 7.35)
+        ],
+        labelT: 0.55,
+        labelOffsetY: 0.42,
+        beadCount: 4
+      }
+    ];
+
+    /**
+     * =========================================================================
+     * 2. STATE APLIKASI & INISIALISASI THREE.JS
+     * =========================================================================
+     */
+    const state = {
+      activeFlowFilter: 'all',
+      showZoneLabels: true,
+      showFlowLabels: true,
+      animatingFlows: true,
+      autoRotate: false,
+      selectedZoneId: null,
+      sidebarOpen: window.innerWidth >= 1024
+    };
+
+    // Isometric-style default 3/4 view matching architectural diagram
+    const DEFAULT_CAM_POS = new THREE.Vector3(16.5, 15.8, 17.5);
+    const DEFAULT_CAM_TARGET = new THREE.Vector3(-0.6, 1.3, 0.2);
+
+    const container = document.getElementById('canvas-container');
+    const labelsLayer = document.getElementById('labels-layer');
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0xe4edf6, 38, 82);
+
+    const camera = new THREE.PerspectiveCamera(
+      36,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      150
+    );
+    camera.position.copy(DEFAULT_CAM_POS);
+
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.06;
+    container.appendChild(renderer.domElement);
+
+    // OrbitControls Setup
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.copy(DEFAULT_CAM_TARGET);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.065;
+    controls.enablePan = true;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 7.5;
+    controls.maxDistance = 42;
+    controls.minPolarAngle = 0.14;
+    controls.maxPolarAngle = Math.PI / 2 - 0.06; // Prevent camera clipping below ground
+    controls.autoRotate = false;
+    controls.autoRotateSpeed = 0.9;
+    controls.update();
+
+    // Smooth camera transition state
+    const camAnim = {
+      active: false,
+      startTime: 0,
+      duration: 850,
+      fromPos: new THREE.Vector3(),
+      toPos: new THREE.Vector3(),
+      fromTarget: new THREE.Vector3(),
+      toTarget: new THREE.Vector3()
+    };
+
+    function focusCameraTo(toPos, toTarget, duration = 850) {
+      camAnim.active = true;
+      camAnim.startTime = performance.now();
+      camAnim.duration = duration;
+      camAnim.fromPos.copy(camera.position);
+      camAnim.toPos.copy(toPos);
+      camAnim.fromTarget.copy(controls.target);
+      camAnim.toTarget.copy(toTarget);
+    }
+
+    // Cancel camera tween if user takes manual control
+    controls.addEventListener('start', () => {
+      camAnim.active = false;
+    });
+
+    /**
+     * =========================================================================
+     * 3. PENCAHAYAAN ARSITEKTURAL (BRIGHT DAYLIGHT & SOFT SHADOWS)
+     * =========================================================================
+     */
+    const hemiLight = new THREE.HemisphereLight(0xf3f9ff, 0xb8c7d9, 0.98);
+    hemiLight.position.set(0, 25, 0);
+    scene.add(hemiLight);
+
+    const sunLight = new THREE.DirectionalLight(0xfffaf0, 1.38);
+    sunLight.position.set(16, 26, 14);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.width = 2048;
+    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.camera.near = 4;
+    sunLight.shadow.camera.far = 65;
+    const d = 17;
+    sunLight.shadow.camera.left = -d;
+    sunLight.shadow.camera.right = d;
+    sunLight.shadow.camera.top = d;
+    sunLight.shadow.camera.bottom = -d;
+    sunLight.shadow.bias = -0.00045;
+    sunLight.shadow.normalBias = 0.025;
+    scene.add(sunLight);
+
+    // Subtle cool bounce fill light from opposite direction
+    const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.45);
+    fillLight.position.set(-18, 12, -14);
+    scene.add(fillLight);
+
+    /**
+     * =========================================================================
+     * 4. PEMBANTU MATERIAL & INTERAKTIVITAS RAYCASTER
+     * =========================================================================
+     */
+    const interactiveMeshes = [];
+    const zoneGroups = {};
+    const statusLeds = [];
+
+    function registerZoneObject(obj, zoneId) {
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          child.userData.zoneId = zoneId;
+          interactiveMeshes.push(child);
+        }
+      });
+      if (!zoneGroups[zoneId]) zoneGroups[zoneId] = [];
+      zoneGroups[zoneId].push(obj);
+    }
+
+    function createMat(color, roughness = 0.72, metalness = 0.05, extra = {}) {
+      return new THREE.MeshStandardMaterial({
+        color,
+        roughness,
+        metalness,
+        ...extra
+      });
+    }
+
+    function enableShadows(mesh, cast = true, receive = true) {
+      mesh.castShadow = cast;
+      mesh.receiveShadow = receive;
+      return mesh;
+    }
+
+    // Subtle selection highlight ring on the ground
+    const highlightRingGeo = new THREE.RingGeometry(1.15, 1.38, 40);
+    highlightRingGeo.rotateX(-Math.PI / 2);
+    const highlightRingMat = new THREE.MeshBasicMaterial({
+      color: 0x10b981,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const highlightRing = new THREE.Mesh(highlightRingGeo, highlightRingMat);
+    highlightRing.position.y = 0.03;
+    highlightRing.visible = false;
+    scene.add(highlightRing);
+
+    /**
+     * =========================================================================
+     * 5. MEMBANGUN MODEL 3D DIORAMA ARSITEKTURAL
+     * =========================================================================
+     */
+    const diorama = new THREE.Group();
+    scene.add(diorama);
+
+    // Infinite soft studio floor underneath diorama
+    const studioGround = new THREE.Mesh(
+      new THREE.PlaneGeometry(160, 160),
+      new THREE.MeshStandardMaterial({ color: 0xe6eff7, roughness: 0.95, metalness: 0 })
+    );
+    studioGround.rotation.x = -Math.PI / 2;
+    studioGround.position.y = -0.36;
+    studioGround.receiveShadow = true;
+    scene.add(studioGround);
+
+    // -------------------------------------------------------------------------
+    // 5.1 COURTYARD BASE, WALKWAYS & PERIMETER WALLS
+    // -------------------------------------------------------------------------
+    function buildCourtyardBase() {
+      const group = new THREE.Group();
+
+      // Main plinth / concrete slab
+      const slabMat = createMat(0xe2e8f0, 0.85, 0.02);
+      const slabEdgeMat = createMat(0xcbd5e1, 0.82, 0.03);
+      const slab = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(19.2, 0.36, 13.0), [
+          slabEdgeMat, slabEdgeMat, slabMat, slabEdgeMat, slabEdgeMat, slabEdgeMat
+        ]),
+        true,
+        true
+      );
+      slab.position.set(-1.5, -0.18, 0.0);
+      group.add(slab);
+
+      // Slightly raised inner courtyard concrete paving surface
+      const innerFloor = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(13.8, 0.04, 12.1), createMat(0xedf2f7, 0.88, 0.01)),
+        false,
+        true
+      );
+      innerFloor.position.set(0.85, 0.02, 0.0);
+      group.add(innerFloor);
+
+      // Subtle paving grid lines for architectural detail
+      const gridHelper = new THREE.GridHelper(12, 12, 0xcbd5e1, 0xdce4ee);
+      gridHelper.position.set(0.8, 0.045, 0.0);
+      gridHelper.scale.set(1.12, 1, 0.98);
+      gridHelper.material.opacity = 0.45;
+      gridHelper.material.transparent = true;
+      group.add(gridHelper);
+
+      // Perimeter low grey walls enclosing courtyard
+      const wallMat = createMat(0xcbd5e1, 0.78, 0.04);
+      const wallCapMat = createMat(0xdbe3ec, 0.7, 0.05);
+      const wallH = 0.72;
+      const wallT = 0.28;
+
+      function addWallSegment(x, z, lenX, lenZ) {
+        const wall = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(lenX, wallH, lenZ), wallMat),
+          true,
+          true
+        );
+        wall.position.set(x, wallH / 2, z);
+        group.add(wall);
+
+        const cap = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(lenX + 0.06, 0.08, lenZ + 0.06), wallCapMat),
+          true,
+          true
+        );
+        cap.position.set(x, wallH + 0.04, z);
+        group.add(cap);
+      }
+
+      // Back wall (-Z side, from building back corner to right corner)
+      addWallSegment(0.85, -6.05, 14.0, wallT);
+      // Right wall (+X side)
+      addWallSegment(7.72, 0.0, wallT, 12.35);
+      // Front wall (+Z side) with TWO clean openings:
+      // Opening 1 (front-left exit: "ke bank sampah") around x = -4.3 (-5.2 to -3.3)
+      // Opening 2 (front-right exit: "4 dijual") around x = +5.1 (+4.2 to +6.0)
+      addWallSegment(-5.7, 6.05, 1.0, wallT);      // Left stub
+      addWallSegment(0.45, 6.05, 7.5, wallT);      // Center front wall section
+      addWallSegment(6.92, 6.05, 1.85, wallT);     // Right front corner section
+
+      // Subtle concrete apron ramps at both exits
+      const rampMat = createMat(0xdce4ee, 0.85, 0.02);
+      const exitRampLeft = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.05, 1.5), rampMat),
+        false,
+        true
+      );
+      exitRampLeft.position.set(-4.25, 0.025, 6.4);
+      group.add(exitRampLeft);
+
+      const exitRampRight = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.05, 1.5), rampMat),
+        false,
+        true
+      );
+      exitRampRight.position.set(5.1, 0.025, 6.4);
+      group.add(exitRampRight);
+
+      // Decorative green bushes along the front outer wall & corners
+      const bushMat1 = createMat(0x22c55e, 0.85, 0.0);
+      const bushMat2 = createMat(0x16a34a, 0.85, 0.0);
+      const bushCoords = [
+        [-2.8, 6.48, 0.34], [-2.25, 6.52, 0.28], [-1.75, 6.48, 0.32],
+        [0.1, 6.5, 0.34], [0.65, 6.52, 0.30], [1.2, 6.48, 0.33],
+        [2.9, 6.5, 0.32], [3.45, 6.48, 0.28],
+        [6.6, 6.52, 0.34], [7.2, 6.48, 0.38], [7.95, 5.7, 0.30]
+      ];
+      bushCoords.forEach(([bx, bz, r], i) => {
+        const bush = enableShadows(
+          new THREE.Mesh(
+            new THREE.DodecahedronGeometry(r, 1),
+            i % 2 === 0 ? bushMat1 : bushMat2
+          ),
+          true,
+          true
+        );
+        bush.scale.set(1.1, 0.78, 1.0);
+        bush.position.set(bx, r * 0.65, bz);
+        group.add(bush);
+      });
+
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.2 GEDUNG BERTINGKAT (4-STORY RESIDENTIAL BUILDING ON LEFT SIDE)
+    // -------------------------------------------------------------------------
+    function buildResidentialBuilding() {
+      const group = new THREE.Group();
+      const bW = 4.4;   // depth along X
+      const bH = 8.4;   // height (4 floors)
+      const bD = 10.6;  // length along Z
+
+      const bx = -8.4;
+      const bz = -0.8;
+
+      const wallLight = createMat(0xf1f5f9, 0.75, 0.03);
+      const wallSide = createMat(0xe2e8f0, 0.78, 0.03);
+      const roofMat = createMat(0xcbd5e1, 0.82, 0.03);
+      const parapetMat = createMat(0xdce4ee, 0.74, 0.04);
+
+      // Main building mass
+      const mainBody = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(bW, bH, bD), [
+          wallLight, wallSide, roofMat, wallSide, wallSide, wallSide
+        ]),
+        true,
+        true
+      );
+      mainBody.position.set(bx, bH / 2, bz);
+      group.add(mainBody);
+
+      // Roof parapet border (4 edges)
+      const pH = 0.34;
+      const pT = 0.22;
+      const pY = bH + pH / 2;
+
+      const pFront = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(bW, pH, pT), parapetMat));
+      pFront.position.set(bx, pY, bz + bD / 2 - pT / 2);
+      group.add(pFront);
+
+      const pBack = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(bW, pH, pT), parapetMat));
+      pBack.position.set(bx, pY, bz - bD / 2 + pT / 2);
+      group.add(pBack);
+
+      const pRight = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(pT, pH, bD), parapetMat));
+      pRight.position.set(bx + bW / 2 - pT / 2, pY, bz);
+      group.add(pRight);
+
+      const pLeft = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(pT, pH, bD), parapetMat));
+      pLeft.position.set(bx - bW / 2 + pT / 2, pY, bz);
+      group.add(pLeft);
+
+      // Subtle floor divider ledges on the courtyard-facing facade (+X)
+      const ledgeMat = createMat(0xdce4ee, 0.72, 0.04);
+      for (let f = 1; f <= 3; f++) {
+        const ledge = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, bD + 0.04), ledgeMat),
+          true,
+          true
+        );
+        ledge.position.set(bx + bW / 2 + 0.02, f * 2.05, bz);
+        group.add(ledge);
+      }
+
+      // Neat grid of sky-blue windows on +X facade (4 floors x 5 columns)
+      const windowGlassMat = createMat(0x7dd3fc, 0.18, 0.25, {
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.12
+      });
+      const windowFrameMat = createMat(0xffffff, 0.55, 0.05);
+
+      const cols = 5;
+      const rows = 4;
+      const zStart = bz + 3.85;
+      const zStep = -1.92;
+      const yStart = 1.1;
+      const yStep = 1.95;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const wz = zStart + c * zStep;
+          const wy = yStart + r * yStep;
+
+          // Window frame
+          const frame = enableShadows(
+            new THREE.Mesh(new THREE.BoxGeometry(0.10, 1.24, 1.18), windowFrameMat),
+            false,
+            true
+          );
+          frame.position.set(bx + bW / 2 + 0.02, wy, wz);
+          group.add(frame);
+
+          // Sky-blue pane
+          const pane = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.06, 1.0), windowGlassMat);
+          pane.position.set(bx + bW / 2 + 0.03, wy, wz);
+          group.add(pane);
+        }
+      }
+
+      // Ground-floor building entrance canopy hint near back-left for "5 sayur untuk warga"
+      const doorMat = createMat(0x64748b, 0.5, 0.15);
+      const canopyMat = createMat(0x94a3b8, 0.6, 0.1);
+      const canopy = enableShadows(new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 1.6), canopyMat));
+      canopy.position.set(bx + bW / 2 + 0.4, 2.0, -3.5);
+      group.add(canopy);
+      const door = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.85, 1.1), doorMat);
+      door.position.set(bx + bW / 2 + 0.02, 0.92, -3.5);
+      group.add(door);
+
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.3 TONG PINTAR TIAP LANTAI (4 GREEN SMART BINS ALONG BUILDING CORNER)
+    // -------------------------------------------------------------------------
+    function buildTongPintar() {
+      const group = new THREE.Group();
+      const binMat = createMat(0x16a34a, 0.45, 0.08);
+      const lidMat = createMat(0x15803d, 0.4, 0.1);
+      const railMat = createMat(0x64748b, 0.5, 0.4);
+      const screenMat = createMat(0xecfdf5, 0.2, 0.1, {
+        emissive: 0x34d399,
+        emissiveIntensity: 0.45
+      });
+
+      const xPos = -6.0;
+      const zPos = 3.05;
+      const floorHeights = [0.95, 2.9, 4.85, 6.8];
+
+      // Vertical connection rail / smart chute running down from floor 4 to floor 1
+      const rail = enableShadows(
+        new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 6.5, 12), railMat),
+        true,
+        true
+      );
+      rail.position.set(xPos - 0.15, 3.6, zPos);
+      group.add(rail);
+
+      floorHeights.forEach((y, idx) => {
+        const unit = new THREE.Group();
+
+        // Main bin body
+        const body = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.52), binMat),
+          true,
+          true
+        );
+        unit.add(body);
+
+        // Sloped top lid
+        const lid = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.1, 0.58), lidMat),
+          true,
+          true
+        );
+        lid.position.y = 0.4;
+        unit.add(lid);
+
+        // Mini sensor screen on front
+        const screen = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.16, 0.24), screenMat);
+        screen.position.set(0.28, 0.12, 0);
+        unit.add(screen);
+
+        // Glowing status LED dot
+        const ledMat = new THREE.MeshStandardMaterial({
+          color: 0x4ade80,
+          emissive: 0x22c55e,
+          emissiveIntensity: 1.5,
+          roughness: 0.2
+        });
+        const led = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 12), ledMat);
+        led.position.set(0.3, 0.26, 0.14);
+        unit.add(led);
+        statusLeds.push({ mat: ledMat, phase: idx * 1.1 });
+
+        unit.position.set(xPos, y, zPos);
+        group.add(unit);
+      });
+
+      registerZoneObject(group, 'tong_pintar');
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.4 TITIK PILAH (SORTING WORKBENCH WITH MINI SEGREGATED BOXES)
+    // -------------------------------------------------------------------------
+    function buildTitikPilah() {
+      const group = new THREE.Group();
+      const basePos = new THREE.Vector3(-3.9, 0, 2.85);
+
+      const tableTopMat = createMat(0xf8fafc, 0.55, 0.06);
+      const tableBodyMat = createMat(0xcbd5e1, 0.65, 0.08);
+      const legMat = createMat(0x64748b, 0.5, 0.35);
+
+      // Workbench cabinet / table
+      const cabinet = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.65, 1.05), tableBodyMat),
+        true,
+        true
+      );
+      cabinet.position.set(basePos.x, 0.52, basePos.z);
+      group.add(cabinet);
+
+      const topSurface = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(2.34, 0.1, 1.16), tableTopMat),
+        true,
+        true
+      );
+      topSurface.position.set(basePos.x, 0.88, basePos.z);
+      group.add(topSurface);
+
+      // 4 short legs
+      const legOffsets = [
+        [-1.0, -0.45], [1.0, -0.45], [-1.0, 0.45], [1.0, 0.45]
+      ];
+      legOffsets.forEach(([ox, oz]) => {
+        const leg = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.22, 0.1), legMat),
+          true,
+          true
+        );
+        leg.position.set(basePos.x + ox, 0.11, basePos.z + oz);
+        group.add(leg);
+      });
+
+      // Segregated mini sorting containers on top of the table
+      const miniBins = [
+        { ox: -0.72, color: 0x16a34a, shape: 'cyl' }, // organic green
+        { ox: -0.22, color: 0x0f766e, shape: 'cyl' }, // hard organic teal
+        { ox: 0.28, color: 0x94a3b8, shape: 'box' },  // sorting tray grey
+        { ox: 0.78, color: 0x334155, shape: 'box' }   // trapped plastic dark
+      ];
+      miniBins.forEach((b) => {
+        const geo = b.shape === 'cyl'
+          ? new THREE.CylinderGeometry(0.21, 0.18, 0.42, 16)
+          : new THREE.BoxGeometry(0.38, 0.32, 0.42);
+        const mesh = enableShadows(
+          new THREE.Mesh(geo, createMat(b.color, 0.5, 0.08)),
+          true,
+          true
+        );
+        mesh.position.set(basePos.x + b.ox, 1.12, basePos.z);
+        group.add(mesh);
+      });
+
+      // Small teal accent stripe on front of workbench
+      const accent = new THREE.Mesh(
+        new THREE.BoxGeometry(2.22, 0.12, 0.03),
+        createMat(0x0f766e, 0.4, 0.1)
+      );
+      accent.position.set(basePos.x, 0.72, basePos.z + 0.53);
+      group.add(accent);
+
+      registerZoneObject(group, 'titik_pilah');
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.5 KOMPOSTER DRUM (3 BLUE CYLINDRICAL COMPOSTING DRUMS WITH VENT PIPES)
+    // -------------------------------------------------------------------------
+    function buildKomposterDrums() {
+      const group = new THREE.Group();
+      const drumMat = createMat(0x3b82f6, 0.42, 0.12);
+      const rimMat = createMat(0x1d4ed8, 0.35, 0.2);
+      const lidMat = createMat(0x2563eb, 0.4, 0.15);
+      const pipeMat = createMat(0x94a3b8, 0.45, 0.35);
+
+      const drumPositions = [
+        [-4.35, -1.25],
+        [-3.15, -1.25],
+        [-3.75, -0.25]
+      ];
+
+      drumPositions.forEach(([dx, dz]) => {
+        const drum = new THREE.Group();
+
+        // Main blue barrel
+        const body = enableShadows(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 1.32, 24), drumMat),
+          true,
+          true
+        );
+        body.position.y = 0.68;
+        drum.add(body);
+
+        // Ribbed horizontal reinforcement rims
+        [0.35, 0.98, 1.32].forEach((ry) => {
+          const rim = enableShadows(
+            new THREE.Mesh(new THREE.TorusGeometry(0.47, 0.032, 10, 24), rimMat),
+            true,
+            true
+          );
+          rim.rotation.x = Math.PI / 2;
+          rim.position.y = ry;
+          drum.add(rim);
+        });
+
+        // Drum top lid
+        const lid = enableShadows(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.07, 24), lidMat),
+          true,
+          true
+        );
+        lid.position.y = 1.36;
+        drum.add(lid);
+
+        // Vertical vent pipe + small cap on lid
+        const ventPipe = enableShadows(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.42, 12), pipeMat),
+          true,
+          true
+        );
+        ventPipe.position.set(0.18, 1.56, 0);
+        drum.add(ventPipe);
+
+        const ventCap = enableShadows(
+          new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.08, 12), pipeMat),
+          true,
+          true
+        );
+        ventCap.position.set(0.18, 1.8, 0);
+        drum.add(ventCap);
+
+        // Small bottom leachate tap
+        const tap = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.08), rimMat);
+        tap.position.set(0.48, 0.16, 0);
+        drum.add(tap);
+
+        drum.position.set(dx, 0.02, dz);
+        group.add(drum);
+      });
+
+      registerZoneObject(group, 'komposter_drum');
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.6 RUANG MAGGOT + PANEL SURYA & BATERAI (CENTER COURTYARD)
+    // -------------------------------------------------------------------------
+    function buildRuangMaggotAndSolar() {
+      const maggotGroup = new THREE.Group();
+      const solarGroup = new THREE.Group();
+      const cx = 0.75;
+      const cz = 0.55;
+
+      const woodFrameMat = createMat(0xc2410c, 0.68, 0.05);
+      const rackMat = createMat(0xea580c, 0.62, 0.06);
+      const trayMat = createMat(0xf97316, 0.58, 0.05);
+      const substrateMat = createMat(0x78350f, 0.92, 0.0);
+      const maggotHintMat = createMat(0xfef3c7, 0.7, 0.0);
+
+      // 3 Modular multi-tier biopond racks side-by-side
+      const rackXs = [cx - 1.25, cx, cx + 1.25];
+      rackXs.forEach((rx) => {
+        // 4 vertical corner posts per rack
+        const pOffsets = [
+          [-0.48, -0.92], [0.48, -0.92], [-0.48, 0.92], [0.48, 0.92]
+        ];
+        pOffsets.forEach(([ox, oz]) => {
+          const post = enableShadows(
+            new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.05, 0.1), woodFrameMat),
+            true,
+            true
+          );
+          post.position.set(rx + ox, 1.04, cz + oz);
+          maggotGroup.add(post);
+        });
+
+        // 3 slatted biopond tiers with trays + organic substrate
+        [0.52, 1.12, 1.72].forEach((ty) => {
+          const trayOuter = enableShadows(
+            new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.24, 1.88), trayMat),
+            true,
+            true
+          );
+          trayOuter.position.set(rx, ty, cz);
+          maggotGroup.add(trayOuter);
+
+          const substrate = new THREE.Mesh(
+            new THREE.BoxGeometry(0.9, 0.08, 1.74),
+            substrateMat
+          );
+          substrate.position.set(rx, ty + 0.11, cz);
+          maggotGroup.add(substrate);
+
+          // Tiny light-cream spots suggesting active maggot culture
+          for (let k = -2; k <= 2; k++) {
+            const dot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.08), maggotHintMat);
+            dot.position.set(rx + (k % 2 === 0 ? 0.18 : -0.18), ty + 0.16, cz + k * 0.3);
+            maggotGroup.add(dot);
+          }
+        });
+      });
+
+      // Canopy support beams holding the solar roof above Ruang Maggot
+      const roofSupportMat = createMat(0x475569, 0.45, 0.45);
+      const canopyPosts = [
+        [cx - 1.85, cz - 1.05, 2.85],
+        [cx + 1.85, cz - 1.05, 2.85],
+        [cx - 1.85, cz + 1.05, 2.35],
+        [cx + 1.85, cz + 1.05, 2.35]
+      ];
+      canopyPosts.forEach(([px, pz, ph]) => {
+        const strut = enableShadows(
+          new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, ph, 10), roofSupportMat),
+          true,
+          true
+        );
+        strut.position.set(px, ph / 2, pz);
+        maggotGroup.add(strut);
+      });
+
+      // --- PANEL SURYA + BATERAI (LAMPU) ---
+      const panelPivot = new THREE.Group();
+      panelPivot.position.set(cx, 2.66, cz);
+      panelPivot.rotation.x = 0.22; // Sloped towards front sun
+
+      // Metallic aluminum backing frame
+      const frameMesh = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(4.15, 0.11, 2.48), createMat(0xcbd5e1, 0.35, 0.6)),
+        true,
+        true
+      );
+      panelPivot.add(frameMesh);
+
+      // Photovoltaic dark-blue solar panel surface
+      const pvMat = createMat(0x1e3a8a, 0.22, 0.38, {
+        emissive: 0x1d4ed8,
+        emissiveIntensity: 0.18
+      });
+      const pvSurface = new THREE.Mesh(new THREE.BoxGeometry(3.98, 0.05, 2.32), pvMat);
+      pvSurface.position.y = 0.05;
+      panelPivot.add(pvSurface);
+
+      // Crisp white solar cell grid lines
+      const gridLineMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+      for (let i = -3; i <= 3; i++) {
+        const vLine = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.02, 2.32), gridLineMat);
+        vLine.position.set(i * 0.56, 0.08, 0);
+        panelPivot.add(vLine);
+      }
+      for (let j = -1; j <= 1; j++) {
+        const hLine = new THREE.Mesh(new THREE.BoxGeometry(3.98, 0.02, 0.025), gridLineMat);
+        hLine.position.set(0, 0.08, j * 0.76);
+        panelPivot.add(hLine);
+      }
+
+      solarGroup.add(panelPivot);
+
+      // Compact Blue Battery / Inverter Box + Conduit + Solar Lamp Indicator
+      const bx = cx + 2.15;
+      const bz = cz + 1.2;
+      const batteryBox = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.72, 0.52), createMat(0x2563eb, 0.4, 0.25)),
+        true,
+        true
+      );
+      batteryBox.position.set(bx, 0.38, bz);
+      solarGroup.add(batteryBox);
+
+      const batteryTop = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.08, 0.56), createMat(0x1e40af, 0.4, 0.3)),
+        true,
+        true
+      );
+      batteryTop.position.set(bx, 0.76, bz);
+      solarGroup.add(batteryTop);
+
+      // Battery charge indicator LED
+      const batLedMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        emissive: 0x0ea5e9,
+        emissiveIntensity: 1.8,
+        roughness: 0.2
+      });
+      const batLed = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.03), batLedMat);
+      batLed.position.set(bx, 0.54, bz + 0.26);
+      solarGroup.add(batLed);
+      statusLeds.push({ mat: batLedMat, phase: 2.2 });
+
+      // Small solar lamp post beside battery box
+      const lampPole = enableShadows(
+        new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 2.3, 10), roofSupportMat),
+        true,
+        true
+      );
+      lampPole.position.set(bx + 0.38, 1.15, bz - 0.15);
+      solarGroup.add(lampPole);
+
+      const lampHead = new THREE.Mesh(
+        new THREE.SphereGeometry(0.14, 14, 14),
+        new THREE.MeshStandardMaterial({
+          color: 0xfef08a,
+          emissive: 0xfacc15,
+          emissiveIntensity: 1.4,
+          roughness: 0.2
+        })
+      );
+      lampHead.position.set(bx + 0.38, 2.34, bz - 0.15);
+      solarGroup.add(lampHead);
+
+      // Subtle cable connecting canopy to battery box
+      const cableCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(cx + 1.85, 2.2, cz + 1.05),
+        new THREE.Vector3(bx - 0.1, 1.4, bz),
+        new THREE.Vector3(bx, 0.75, bz)
+      ]);
+      const cableMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(cableCurve, 12, 0.025, 6, false),
+        createMat(0x334155, 0.6, 0.2)
+      );
+      solarGroup.add(cableMesh);
+
+      registerZoneObject(maggotGroup, 'ruang_maggot');
+      registerZoneObject(solarGroup, 'panel_surya');
+      diorama.add(maggotGroup);
+      diorama.add(solarGroup);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.7 KEBUN PANGAN (11 RAISED WOODEN GARDEN BEDS IN L-SHAPE)
+    // -------------------------------------------------------------------------
+    function buildKebunPangan() {
+      const group = new THREE.Group();
+      const woodMat = createMat(0x92400e, 0.82, 0.02);
+      const woodTrimMat = createMat(0xb45309, 0.78, 0.02);
+      const soilMat = createMat(0x5c3a21, 0.96, 0.0);
+      const leafMat1 = createMat(0x22c55e, 0.72, 0.0);
+      const leafMat2 = createMat(0x16a34a, 0.75, 0.0);
+      const leafMat3 = createMat(0x4ade80, 0.70, 0.0);
+
+      // 11 beds forming a crisp L-shape along the back (-Z) and right (+X) walls
+      const bedPositions = [
+        // Back row (z = -4.85) — 5 beds
+        [-2.4, -4.85], [-0.35, -4.85], [1.7, -4.85], [3.75, -4.85], [5.8, -4.85],
+        // Second row (z = -3.15) — 4 beds
+        [-0.35, -3.15], [1.7, -3.15], [3.75, -3.15], [5.8, -3.15],
+        // Right wing continuing along +X wall — 2 beds
+        [5.8, -1.45], [5.8, 0.25]
+      ];
+
+      bedPositions.forEach(([bx, bz], idx) => {
+        const bed = new THREE.Group();
+
+        // Wooden raised planter box
+        const box = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.44, 1.32), woodMat),
+          true,
+          true
+        );
+        box.position.y = 0.24;
+        bed.add(box);
+
+        // Top wooden rim border
+        const rim = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(1.84, 0.07, 1.4), woodTrimMat),
+          true,
+          true
+        );
+        rim.position.y = 0.46;
+        bed.add(rim);
+
+        // Rich dark soil bed
+        const soil = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(1.64, 0.08, 1.2), soilMat),
+          false,
+          true
+        );
+        soil.position.y = 0.48;
+        bed.add(soil);
+
+        // Clusters of leafy green vegetables (2 rows x 3 plants per bed)
+        const plantOffsets = [
+          [-0.48, -0.28], [0, -0.28], [0.48, -0.28],
+          [-0.48, 0.28], [0, 0.28], [0.48, 0.28]
+        ];
+        plantOffsets.forEach(([px, pz], pIdx) => {
+          const cluster = new THREE.Group();
+          const chosenMat = (idx + pIdx) % 3 === 0 ? leafMat1 : ((idx + pIdx) % 3 === 1 ? leafMat2 : leafMat3);
+
+          // 3 overlapping low-poly leaves per vegetable rosette
+          for (let l = 0; l < 3; l++) {
+            const leaf = enableShadows(
+              new THREE.Mesh(new THREE.DodecahedronGeometry(0.145, 0), chosenMat),
+              true,
+              true
+            );
+            const ang = (l / 3) * Math.PI * 2 + pIdx * 0.4;
+            leaf.position.set(Math.cos(ang) * 0.07, 0.06, Math.sin(ang) * 0.07);
+            leaf.scale.set(1.15, 0.65, 1.0);
+            cluster.add(leaf);
+          }
+
+          cluster.position.set(px, 0.54, pz);
+          bed.add(cluster);
+        });
+
+        bed.position.set(bx, 0, bz);
+        group.add(bed);
+      });
+
+      registerZoneObject(group, 'kebun_pangan');
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.8 OVEN SURYA (SLANTED SOLAR DRYER BOX WITH TRANSLUCENT SKY-BLUE GLASS)
+    // -------------------------------------------------------------------------
+    function buildOvenSurya() {
+      const group = new THREE.Group();
+      const ox = 4.55;
+      const oz = 3.45;
+
+      const boxMat = createMat(0xd97706, 0.65, 0.06);
+      const woodLegMat = createMat(0x92400e, 0.72, 0.04);
+      const interiorTrayMat = createMat(0xfef3c7, 0.75, 0.05);
+      const driedMaggotMat = createMat(0xb45309, 0.85, 0.02);
+      const frameMat = createMat(0xf8fafc, 0.4, 0.15);
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0x7dd3fc,
+        transparent: true,
+        opacity: 0.58,
+        roughness: 0.1,
+        metalness: 0.08,
+        transmission: 0.35
+      });
+
+      // 4 sturdy legs
+      [[-0.82, -0.62], [0.82, -0.62], [-0.82, 0.62], [0.82, 0.62]].forEach(([lx, lz]) => {
+        const leg = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.68, 0.11), woodLegMat),
+          true,
+          true
+        );
+        leg.position.set(ox + lx, 0.34, oz + lz);
+        group.add(leg);
+      });
+
+      // Main dryer chamber body
+      const chamber = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.52, 1.46), boxMat),
+        true,
+        true
+      );
+      chamber.position.set(ox, 0.9, oz);
+      group.add(chamber);
+
+      // Sloped upper collar so lid sits at an angle facing sun
+      const backRiser = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.34, 0.12), boxMat),
+        true,
+        true
+      );
+      backRiser.position.set(ox, 1.32, oz - 0.67);
+      group.add(backRiser);
+
+      // Interior drying tray visible through glass
+      const tray = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.06, 1.24), interiorTrayMat);
+      tray.position.set(ox, 1.15, oz);
+      group.add(tray);
+
+      // Dried maggot rows on tray
+      for (let r = -1; r <= 1; r++) {
+        const row = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.04, 0.24), driedMaggotMat);
+        row.position.set(ox, 1.19, oz + r * 0.34);
+        group.add(row);
+      }
+
+      // Angled translucent sky-blue glass lid + white frame
+      const lidPivot = new THREE.Group();
+      lidPivot.position.set(ox, 1.36, oz);
+      lidPivot.rotation.x = 0.21;
+
+      const glassPane = new THREE.Mesh(new THREE.BoxGeometry(1.74, 0.04, 1.38), glassMat);
+      lidPivot.add(glassPane);
+
+      // Perimeter lid frame bars
+      const barFront = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.07, 0.08), frameMat);
+      barFront.position.z = 0.72;
+      lidPivot.add(barFront);
+      const barBack = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.07, 0.08), frameMat);
+      barBack.position.z = -0.72;
+      lidPivot.add(barBack);
+      const barLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 1.52), frameMat);
+      barLeft.position.x = -0.9;
+      lidPivot.add(barLeft);
+      const barRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.07, 1.52), frameMat);
+      barRight.position.x = 0.9;
+      lidPivot.add(barRight);
+
+      group.add(lidPivot);
+
+      // Reflective propped flap on back edge (classic solar oven mirror)
+      const reflector = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.92, 0.05), createMat(0xf1f5f9, 0.15, 0.65)),
+        true,
+        true
+      );
+      reflector.position.set(ox, 1.88, oz - 0.88);
+      reflector.rotation.x = 0.38;
+      group.add(reflector);
+
+      registerZoneObject(group, 'oven_surya');
+      diorama.add(group);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5.9 SAMPAH ANORGANIK (SEMI-TRANSPARENT SHELTER + 4 COLOR-CODED BINS)
+    // -------------------------------------------------------------------------
+    function buildSampahAnorganik() {
+      const group = new THREE.Group();
+      const sx = -1.3;
+      const sz = 4.65;
+
+      const basePadMat = createMat(0xcbd5e1, 0.8, 0.04);
+      const frameMat = createMat(0x64748b, 0.45, 0.4);
+      const glassShelterMat = new THREE.MeshPhysicalMaterial({
+        color: 0xe2e8f0,
+        transparent: true,
+        opacity: 0.36,
+        roughness: 0.15,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+
+      // Concrete pad
+      const pad = enableShadows(
+        new THREE.Mesh(new THREE.BoxGeometry(3.55, 0.1, 1.48), basePadMat),
+        true,
+        true
+      );
+      pad.position.set(sx, 0.06, sz);
+      group.add(pad);
+
+      // Shelter metal posts (4 corners)
+      const posts = [
+        [-1.68, -0.66, 1.62], [1.68, -0.66, 1.62],
+        [-1.68, 0.66, 1.38], [1.68, 0.66, 1.38]
+      ];
+      posts.forEach(([px, pz, ph]) => {
+        const post = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.08, ph, 0.08), frameMat),
+          true,
+          true
+        );
+        post.position.set(sx + px, ph / 2 + 0.05, sz + pz);
+        group.add(post);
+      });
+
+      // Sloped semi-transparent roof & side glass panels
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.05, 1.56), glassShelterMat);
+      roof.position.set(sx, 1.56, sz);
+      roof.rotation.x = 0.18;
+      group.add(roof);
+
+      const backGlass = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.52, 0.04), glassShelterMat);
+      backGlass.position.set(sx, 0.86, sz - 0.66);
+      group.add(backGlass);
+
+      const leftGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.42, 1.32), glassShelterMat);
+      leftGlass.position.set(sx - 1.68, 0.8, sz);
+      group.add(leftGlass);
+
+      const rightGlass = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.42, 1.32), glassShelterMat);
+      rightGlass.position.set(sx + 1.68, 0.8, sz);
+      group.add(rightGlass);
+
+      // 4 Color-Coded Sorting Bins inside shelter (Yellow, Blue, Grey, Red)
+      const binSpecs = [
+        { ox: -1.14, color: 0xeab308, lid: 0xca8a04 }, // Kuning (Plastik)
+        { ox: -0.38, color: 0x3b82f6, lid: 0x2563eb }, // Biru (Kertas)
+        { ox: 0.38, color: 0x94a3b8, lid: 0x64748b },  // Abu-abu (Logam/Kaca)
+        { ox: 1.14, color: 0xef4444, lid: 0xdc2626 }   // Merah (B3 / Residu)
+      ];
+
+      binSpecs.forEach((b) => {
+        const body = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.86, 0.72), createMat(b.color, 0.45, 0.08)),
+          true,
+          true
+        );
+        body.position.set(sx + b.ox, 0.54, sz);
+        group.add(body);
+
+        const lid = enableShadows(
+          new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.14, 0.76), createMat(b.lid, 0.42, 0.1)),
+          true,
+          true
+        );
+        lid.position.set(sx + b.ox, 1.02, sz - 0.02);
+        lid.rotation.x = 0.12;
+        group.add(lid);
+      });
+
+      registerZoneObject(group, 'sampah_anorganik');
+      diorama.add(group);
+    }
+
+    // Build all architectural structures
+    buildCourtyardBase();
+    buildResidentialBuilding();
+    buildTongPintar();
+    buildTitikPilah();
+    buildKomposterDrums();
+    buildRuangMaggotAndSolar();
+    buildKebunPangan();
+    buildOvenSurya();
+    buildSampahAnorganik();
+
+    /**
+     * =========================================================================
+     * 6. MEMBANGUN ALUR 3D BERANIMASI (CURVED TUBES + ARROWS + FLOW BEADS)
+     * =========================================================================
+     */
+    const flowObjects = [];
+    const flowLabelItems = [];
+
+    function buildFlowPaths() {
+      const beadGeo = new THREE.SphereGeometry(0.115, 14, 14);
+      const coneGeo = new THREE.ConeGeometry(0.18, 0.42, 14);
+
+      FLOW_DEFINITIONS.forEach((def) => {
+        const palette = FLOW_COLORS[def.category];
+        const curve = new THREE.CatmullRomCurve3(def.points);
+
+        // Smooth curved tube
+        const tubeGeo = new THREE.TubeGeometry(curve, 36, 0.06, 10, false);
+        const tubeMat = new THREE.MeshStandardMaterial({
+          color: palette.hex,
+          emissive: palette.hex,
+          emissiveIntensity: 0.22,
+          roughness: 0.35,
+          metalness: 0.05,
+          transparent: true,
+          opacity: 0.92
+        });
+        const tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        tubeMesh.castShadow = false;
+        diorama.add(tubeMesh);
+
+        // Directional arrowhead cone at end of curve
+        const endPt = curve.getPoint(1);
+        const endTangent = curve.getTangent(1).normalize();
+        const arrowMat = new THREE.MeshStandardMaterial({
+          color: palette.hex,
+          emissive: palette.hex,
+          emissiveIntensity: 0.28,
+          roughness: 0.35,
+          transparent: true,
+          opacity: 0.96
+        });
+        const arrowMesh = new THREE.Mesh(coneGeo, arrowMat);
+        arrowMesh.position.copy(endPt);
+        arrowMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), endTangent);
+        diorama.add(arrowMesh);
+
+        // Glowing animated beads traveling along the curve
+        const beads = [];
+        for (let i = 0; i < def.beadCount; i++) {
+          const bMat = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            emissive: palette.hex,
+            emissiveIntensity: 1.4,
+            roughness: 0.15,
+            transparent: true,
+            opacity: 1.0
+          });
+          const bead = new THREE.Mesh(beadGeo, bMat);
+          diorama.add(bead);
+          beads.push({
+            mesh: bead,
+            mat: bMat,
+            offset: i / def.beadCount
+          });
+        }
+
+        // Create floating HTML label badge for this flow step
+        const labelEl = document.createElement('div');
+        labelEl.className = 'flow-label';
+        labelEl.textContent = def.label;
+        labelEl.style.borderColor = palette.css;
+        labelEl.style.color = palette.textCss;
+        labelsLayer.appendChild(labelEl);
+
+        const labelAnchor = curve.getPoint(def.labelT);
+        labelAnchor.y += def.labelOffsetY;
+
+        flowLabelItems.push({
+          el: labelEl,
+          pos: labelAnchor,
+          category: def.category
+        });
+
+        flowObjects.push({
+          id: def.id,
+          category: def.category,
+          curve,
+          tubeMat,
+          arrowMat,
+          beads,
+          labelEl
+        });
+      });
+    }
+
+    buildFlowPaths();
+
+    /**
+     * =========================================================================
+     * 7. MEMBANGUN LABEL ZONA 3D TERPROYEKSI & LEGENDA INTERAKTIF
+     * =========================================================================
+     */
+    const zoneLabelItems = [];
+
+    FLOATING_ZONE_LABELS.forEach((item) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'zone-label';
+      el.style.backgroundColor = item.color;
+      el.textContent = item.text;
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectZone(item.zoneId);
+        if (item.zoneId === 'tong_pintar') {
+          focusCameraTo(new THREE.Vector3(-3.6, 3.8, 5.0), new THREE.Vector3(-6.0, 2.9, 3.05), 500);
+          setTimeout(() => {
+            window.location.href = 'tong-3d.html';
+          }, 450);
+        }
+      });
+      labelsLayer.appendChild(el);
+      zoneLabelItems.push({
+        el,
+        pos: item.pos,
+        zoneId: item.zoneId
+      });
+    });
+
+    // Populate Right Sidebar Legend List
+    const legendListEl = document.getElementById('legend-list');
+    const legendButtons = {};
+
+    ZONE_ORDER.forEach((zoneId) => {
+      const z = ZONE_DATA[zoneId];
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 text-left text-xs font-medium text-slate-700 hover:bg-slate-100/90 transition-all cursor-pointer border border-transparent';
+      btn.innerHTML = `
+        <span class="w-3 h-3 rounded-full shrink-0 shadow-sm" style="background-color: ${z.colorHex};"></span>
+        <span class="truncate flex-1">${z.name}</span>
+        <svg class="w-3.5 h-3.5 text-slate-400 shrink-0 opacity-0 group-hover:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      `;
+      btn.addEventListener('click', () => selectZone(zoneId));
+      legendListEl.appendChild(btn);
+      legendButtons[zoneId] = btn;
+    });
+
+    /**
+     * =========================================================================
+     * 8. INTERAKSI PEMILIHAN ZONA, INFO CARD & FILTER ALUR
+     * =========================================================================
+     */
+    const infoCardEl = document.getElementById('zone-info-card');
+    const infoDotEl = document.getElementById('info-dot');
+    const infoCategoryEl = document.getElementById('info-category');
+    const infoTitleEl = document.getElementById('info-title');
+    const infoDescEl = document.getElementById('info-desc');
+    const infoInputEl = document.getElementById('info-input');
+    const infoOutputEl = document.getElementById('info-output');
+
+    function selectZone(zoneId) {
+      const z = ZONE_DATA[zoneId];
+      if (!z) return;
+
+      state.selectedZoneId = zoneId;
+
+      // Focus camera smoothly on selected zone
+      focusCameraTo(z.cameraPos, z.cameraTarget, 850);
+
+      // Update selection ring on ground
+      highlightRing.position.set(z.cameraTarget.x, 0.05, z.cameraTarget.z);
+      highlightRingMat.color.set(z.colorHex);
+      highlightRing.visible = true;
+
+      // Highlight active item in legend
+      Object.entries(legendButtons).forEach(([id, btn]) => {
+        if (id === zoneId) {
+          btn.classList.add('bg-emerald-50', 'border-emerald-300', 'text-slate-900', 'font-semibold');
+          btn.classList.remove('border-transparent');
+        } else {
+          btn.classList.remove('bg-emerald-50', 'border-emerald-300', 'text-slate-900', 'font-semibold');
+          btn.classList.add('border-transparent');
+        }
+      });
+
+      // Populate and display info card
+      infoDotEl.style.backgroundColor = z.colorHex;
+      infoCategoryEl.textContent = z.category;
+      infoTitleEl.textContent = z.name;
+      infoDescEl.textContent = z.desc;
+      infoInputEl.textContent = z.input;
+      infoOutputEl.textContent = z.output;
+
+      infoCardEl.classList.remove('hidden', 'info-card-enter');
+      // Trigger reflow for crisp animation replay
+      void infoCardEl.offsetWidth;
+      infoCardEl.classList.add('info-card-enter');
+
+      // On compact mobile screens, auto-collapse sidebar so the user sees the 3D focus & info card clearly
+      if (window.innerWidth < 768 && state.sidebarOpen) {
+        setSidebarOpen(false);
+      }
+
+      // Tampilkan tombol Buka Detail Tong Pintar jika zona tong_pintar aktif
+      const tongAction = document.getElementById('info-action-tong');
+      if (tongAction) {
+        tongAction.classList.toggle('hidden', zoneId !== 'tong_pintar');
+      }
+    }
+
+    function closeZoneInfo() {
+      state.selectedZoneId = null;
+      infoCardEl.classList.add('hidden');
+      const tongAction = document.getElementById('info-action-tong');
+      if (tongAction) {
+        tongAction.classList.add('hidden');
+      }
+      highlightRing.visible = false;
+      Object.values(legendButtons).forEach((btn) => {
+        btn.classList.remove('bg-emerald-50', 'border-emerald-300', 'text-slate-900', 'font-semibold');
+        btn.classList.add('border-transparent');
+      });
+    }
+
+    document.getElementById('btn-close-info').addEventListener('click', closeZoneInfo);
+
+    // Flow Filter Logic
+    const filterButtons = document.querySelectorAll('.flow-filter-btn');
+    function applyFlowFilter(filterType) {
+      state.activeFlowFilter = filterType;
+
+      // Update filter button styling
+      filterButtons.forEach((btn) => {
+        const isSelected = btn.dataset.flowFilter === filterType;
+        if (isSelected) {
+          btn.classList.remove('bg-white/80', 'text-slate-700', 'border-slate-200');
+          btn.classList.add('bg-slate-800', 'text-white', 'border-slate-800', 'shadow-sm');
+        } else {
+          btn.classList.add('bg-white/80', 'text-slate-700', 'border-slate-200');
+          btn.classList.remove('bg-slate-800', 'text-white', 'border-slate-800', 'shadow-sm');
+        }
+      });
+
+      // Dim non-selected flow tubes, arrowheads, beads & labels
+      flowObjects.forEach((f) => {
+        const active = filterType === 'all' || f.category === filterType;
+        f.tubeMat.opacity = active ? 0.94 : 0.14;
+        f.tubeMat.emissiveIntensity = active ? 0.28 : 0.02;
+        f.arrowMat.opacity = active ? 0.98 : 0.14;
+        f.beads.forEach((b) => {
+          b.mesh.visible = active;
+        });
+      });
+    }
+
+    filterButtons.forEach((btn) => {
+      btn.addEventListener('click', () => applyFlowFilter(btn.dataset.flowFilter));
+    });
+
+    /**
+     * =========================================================================
+     * 9. KONTROL UI (SIDEBAR, RESET KAMERA, TOGGLE LABEL, ANIMASI, AUTO-PUTAR)
+     * =========================================================================
+     */
+    const rightSidebar = document.getElementById('right-sidebar');
+    function setSidebarOpen(open) {
+      state.sidebarOpen = open;
+      if (open) {
+        rightSidebar.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+        rightSidebar.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+      } else {
+        rightSidebar.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+        rightSidebar.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+      }
+    }
+    setSidebarOpen(state.sidebarOpen);
+
+    document.getElementById('btn-toggle-sidebar').addEventListener('click', () => {
+      setSidebarOpen(!state.sidebarOpen);
+    });
+
+    // Reset Isometric Camera
+    document.getElementById('btn-reset-cam').addEventListener('click', () => {
+      focusCameraTo(DEFAULT_CAM_POS, DEFAULT_CAM_TARGET, 850);
+      closeZoneInfo();
+    });
+
+    // Toggle Zone Labels
+    const btnZoneLabels = document.getElementById('btn-toggle-zone-labels');
+    btnZoneLabels.addEventListener('click', () => {
+      state.showZoneLabels = !state.showZoneLabels;
+      if (state.showZoneLabels) {
+        btnZoneLabels.classList.add('bg-emerald-600', 'text-white', 'shadow-sm', 'hover:bg-emerald-700');
+        btnZoneLabels.classList.remove('text-slate-700', 'hover:bg-slate-100');
+      } else {
+        btnZoneLabels.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm', 'hover:bg-emerald-700');
+        btnZoneLabels.classList.add('text-slate-700', 'hover:bg-slate-100');
+      }
+    });
+
+    // Toggle Flow Labels
+    const btnFlowLabels = document.getElementById('btn-toggle-flow-labels');
+    btnFlowLabels.addEventListener('click', () => {
+      state.showFlowLabels = !state.showFlowLabels;
+      if (state.showFlowLabels) {
+        btnFlowLabels.classList.add('bg-emerald-600', 'text-white', 'shadow-sm', 'hover:bg-emerald-700');
+        btnFlowLabels.classList.remove('text-slate-700', 'hover:bg-slate-100');
+      } else {
+        btnFlowLabels.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm', 'hover:bg-emerald-700');
+        btnFlowLabels.classList.add('text-slate-700', 'hover:bg-slate-100');
+      }
+    });
+
+    // Pause/Play Flow Animation
+    const btnAnim = document.getElementById('btn-toggle-anim');
+    const iconPause = document.getElementById('icon-anim-pause');
+    const iconPlay = document.getElementById('icon-anim-play');
+    const textAnim = document.getElementById('text-anim-btn');
+    btnAnim.addEventListener('click', () => {
+      state.animatingFlows = !state.animatingFlows;
+      if (state.animatingFlows) {
+        iconPause.classList.remove('hidden');
+        iconPlay.classList.add('hidden');
+        textAnim.textContent = 'Jeda Alur';
+        btnAnim.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-200');
+        btnAnim.classList.remove('bg-slate-100', 'text-slate-600', 'border-slate-200');
+      } else {
+        iconPause.classList.add('hidden');
+        iconPlay.classList.remove('hidden');
+        textAnim.textContent = 'Putar Alur';
+        btnAnim.classList.remove('bg-amber-50', 'text-amber-800', 'border-amber-200');
+        btnAnim.classList.add('bg-slate-100', 'text-slate-600', 'border-slate-200');
+      }
+    });
+
+    // Auto-Rotate 3D Toggle
+    const btnRotate = document.getElementById('btn-toggle-rotate');
+    btnRotate.addEventListener('click', () => {
+      state.autoRotate = !state.autoRotate;
+      controls.autoRotate = state.autoRotate;
+      if (state.autoRotate) {
+        btnRotate.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'hover:bg-blue-700');
+        btnRotate.classList.remove('text-slate-700', 'hover:bg-slate-100');
+      } else {
+        btnRotate.classList.remove('bg-blue-600', 'text-white', 'shadow-sm', 'hover:bg-blue-700');
+        btnRotate.classList.add('text-slate-700', 'hover:bg-slate-100');
+      }
+    });
+
+    /**
+     * =========================================================================
+     * 10. RAYCASTER HOVER FEEDBACK & KLIK OBJEK 3D
+     * =========================================================================
+     */
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    let pointerDownPos = { x: 0, y: 0 };
+
+    function updatePointerNDC(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
+
+    renderer.domElement.addEventListener('pointerdown', (e) => {
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+    });
+
+    renderer.domElement.addEventListener('pointermove', (e) => {
+      if (e.buttons > 0) {
+        renderer.domElement.style.cursor = 'grabbing';
+        return;
+      }
+      updatePointerNDC(e);
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(interactiveMeshes, false);
+      renderer.domElement.style.cursor = hits.length > 0 ? 'pointer' : 'grab';
+    });
+
+    renderer.domElement.addEventListener('pointerup', (e) => {
+      const dx = e.clientX - pointerDownPos.x;
+      const dy = e.clientY - pointerDownPos.y;
+      // Only treat as a click if pointer barely moved (not an orbit drag)
+      if (Math.hypot(dx, dy) > 6) return;
+
+      updatePointerNDC(e);
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(interactiveMeshes, false);
+      if (hits.length > 0) {
+        const zoneId = hits[0].object.userData.zoneId;
+        if (zoneId) {
+          selectZone(zoneId);
+          if (zoneId === 'tong_pintar') {
+            // Smooth zoom-in detailing ke tong-3d.html
+            focusCameraTo(new THREE.Vector3(-3.6, 3.8, 5.0), new THREE.Vector3(-6.0, 2.9, 3.05), 500);
+            setTimeout(() => {
+              window.location.href = 'tong-3d.html';
+            }, 450);
+            return;
+          }
+        }
+      }
+    });
+
+    /**
+     * =========================================================================
+     * 11. PROYEKSI LABEL 3D KE LAYAR & LOOP ANIMASI UTAMA
+     * =========================================================================
+     */
+    const projVec = new THREE.Vector3();
+
+    function projectLabelToScreen(worldPos, el, visible, opacity = 1) {
+      if (!visible) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        return;
+      }
+      projVec.copy(worldPos);
+      projVec.project(camera);
+
+      // Hide if behind camera
+      if (projVec.z > 1) {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        return;
+      }
+
+      const x = (projVec.x * 0.5 + 0.5) * window.innerWidth;
+      const y = (-projVec.y * 0.5 + 0.5) * window.innerHeight;
+
+      el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`;
+      el.style.opacity = String(opacity);
+      if (el.classList.contains('zone-label')) {
+        el.style.pointerEvents = 'auto';
+      }
+    }
+
+    let flowProgress = 0;
+    let lastTime = performance.now();
+
+    function animate(now) {
+      requestAnimationFrame(animate);
+
+      const dt = Math.min((now - lastTime) / 1000, 0.05);
+      lastTime = now;
+
+      // 1. Smooth Camera Focus Interpolation (Cubic Ease Out)
+      if (camAnim.active) {
+        const elapsed = now - camAnim.startTime;
+        const t = Math.min(elapsed / camAnim.duration, 1);
+        const ease = 1 - Math.pow(1 - t, 3);
+
+        camera.position.lerpVectors(camAnim.fromPos, camAnim.toPos, ease);
+        controls.target.lerpVectors(camAnim.fromTarget, camAnim.toTarget, ease);
+
+        if (t >= 1) camAnim.active = false;
+      }
+
+      // 2. Update OrbitControls
+      controls.update();
+
+      // 3. Animate Flowing Glowing Beads along 3D Curves
+      if (state.animatingFlows) {
+        flowProgress = (flowProgress + dt * 0.32) % 1;
+      }
+
+      flowObjects.forEach((f) => {
+        f.beads.forEach((b) => {
+          const u = (flowProgress + b.offset) % 1;
+          const pt = f.curve.getPointAt(u);
+          b.mesh.position.copy(pt);
+          // Subtle pulse near start and end
+          const scale = 0.78 + Math.sin(u * Math.PI) * 0.36;
+          b.mesh.scale.setScalar(scale);
+        });
+      });
+
+      // 4. Subtle pulsing on Smart Bin & Battery LEDs + Selection Ring
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.004);
+      statusLeds.forEach((item) => {
+        item.mat.emissiveIntensity = 0.9 + 0.9 * Math.sin(now * 0.0035 + item.phase);
+      });
+
+      if (highlightRing.visible) {
+        const s = 1 + pulse * 0.08;
+        highlightRing.scale.set(s, s, 1);
+        highlightRingMat.opacity = 0.45 + pulse * 0.35;
+      }
+
+      // 5. Render Scene
+      renderer.render(scene, camera);
+
+      // 6. Update Floating 3D HTML Labels
+      zoneLabelItems.forEach((item) => {
+        projectLabelToScreen(item.pos, item.el, state.showZoneLabels, 1);
+      });
+
+      flowLabelItems.forEach((item) => {
+        const matchesFilter =
+          state.activeFlowFilter === 'all' || state.activeFlowFilter === item.category;
+        const show = state.showFlowLabels && matchesFilter;
+        projectLabelToScreen(item.pos, item.el, show, matchesFilter ? 0.96 : 0);
+      });
+    }
+
+    // Handle Responsive Window Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    });
+
+    // Start Animation Loop once page is loaded
+    window.addEventListener('load', () => {
+      renderer.domElement.style.cursor = 'grab';
+      lastTime = performance.now();
+      requestAnimationFrame(animate);
+    });
+  </script>
+</body>
+</html>
