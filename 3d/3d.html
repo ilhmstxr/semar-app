@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -29,7 +30,8 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    html, body {
+    html,
+    body {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -134,9 +136,11 @@
     .thin-scroll::-webkit-scrollbar {
       width: 5px;
     }
+
     .thin-scroll::-webkit-scrollbar-track {
       background: transparent;
     }
+
     .thin-scroll::-webkit-scrollbar-thumb {
       background: rgba(100, 116, 139, 0.3);
       border-radius: 9999px;
@@ -152,6 +156,7 @@
         opacity: 0;
         transform: translateY(12px) scale(0.98);
       }
+
       to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -163,6 +168,7 @@
         font-size: 10px;
         padding: 3px 8px;
       }
+
       .flow-label {
         font-size: 9px;
         padding: 1.5px 6px;
@@ -170,6 +176,7 @@
     }
   </style>
 </head>
+
 <body class="text-slate-800 antialiased">
 
   <!-- 3D WebGL Canvas Container -->
@@ -179,11 +186,14 @@
   <div id="labels-layer"></div>
 
   <!-- Top-Left Header HUD -->
-  <header class="fixed top-3 left-3 sm:top-4 sm:left-4 z-20 max-w-[calc(100vw-4.5rem)] sm:max-w-md pointer-events-auto space-y-2">
+  <header
+    class="fixed top-3 left-3 sm:top-4 sm:left-4 z-20 max-w-[calc(100vw-4.5rem)] sm:max-w-md pointer-events-auto space-y-2">
     <div class="glass-panel rounded-2xl px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-3">
-      <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shrink-0">
+      <div
+        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-md shrink-0">
         <!-- Isometric Cube SVG Icon -->
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2L3 7l9 5 9-5-9-5z"></path>
           <path d="M3 17l9 5 9-5"></path>
           <path d="M3 12l9 5 9-5"></path>
@@ -200,15 +210,14 @@
     </div>
 
     <!-- Button Simulate 3D Tong Sampah (di bawah Zonasi Lahan Bersama) -->
-    <a
-      href="tong-3d.html"
-      id="btn-simulate-tong-top"
+    <a href="/3d/tong-3d.html" id="btn-simulate-tong-top"
       class="glass-panel rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-xs font-bold text-slate-800 hover:text-emerald-700 hover:bg-white hover:border-emerald-300 transition-all shadow-md group no-underline"
-      title="Buka Model &amp; Simulasi Detail 3D Tong Sampah Pintar IoT"
-    >
+      title="Buka Model &amp; Simulasi Detail 3D Tong Sampah Pintar IoT">
       <div class="flex items-center gap-2.5 min-w-0">
-        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-white flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <div
+          class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 text-white flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             <line x1="10" y1="11" x2="10" y2="17"></line>
@@ -216,7 +225,8 @@
           </svg>
         </div>
         <div class="min-w-0">
-          <div class="font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
+          <div
+            class="font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1.5">
             <span>Simulate 3D Tong Sampah</span>
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
@@ -225,9 +235,11 @@
           </p>
         </div>
       </div>
-      <span class="px-2.5 py-1 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all">
+      <span
+        class="px-2.5 py-1 rounded-xl bg-emerald-600 group-hover:bg-emerald-700 text-white text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-sm transition-all">
         <span>Buka</span>
-        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </span>
@@ -235,13 +247,10 @@
   </header>
 
   <!-- Collapsible Right Sidebar Toggle Button (Always visible when collapsed or mobile) -->
-  <button
-    id="btn-toggle-sidebar"
-    type="button"
-    title="Buka / Tutup Legenda & Filter"
-    class="fixed top-3 right-3 sm:top-4 sm:right-4 z-30 glass-panel rounded-xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2 text-slate-700 hover:text-emerald-700 hover:bg-white transition-all cursor-pointer pointer-events-auto"
-  >
-    <svg id="sidebar-icon-menu" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <button id="btn-toggle-sidebar" type="button" title="Buka / Tutup Legenda & Filter"
+    class="fixed top-3 right-3 sm:top-4 sm:right-4 z-30 glass-panel rounded-xl p-2.5 sm:px-3.5 sm:py-2.5 flex items-center gap-2 text-slate-700 hover:text-emerald-700 hover:bg-white transition-all cursor-pointer pointer-events-auto">
+    <svg id="sidebar-icon-menu" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
       <line x1="4" y1="6" x2="20" y2="6"></line>
       <line x1="4" y1="12" x2="20" y2="12"></line>
       <line x1="4" y1="18" x2="20" y2="18"></line>
@@ -250,10 +259,8 @@
   </button>
 
   <!-- Collapsible Right Sidebar (Legend & Flow Filters) -->
-  <aside
-    id="right-sidebar"
-    class="fixed top-16 right-3 sm:top-16 sm:right-4 z-20 w-72 sm:w-80 max-h-[calc(100vh-9.5rem)] flex flex-col glass-panel rounded-2xl overflow-hidden transition-all duration-300 origin-top-right pointer-events-auto"
-  >
+  <aside id="right-sidebar"
+    class="fixed top-16 right-3 sm:top-16 sm:right-4 z-20 w-72 sm:w-80 max-h-[calc(100vh-9.5rem)] flex flex-col glass-panel rounded-2xl overflow-hidden transition-all duration-300 origin-top-right pointer-events-auto">
     <div class="p-3.5 sm:p-4 overflow-y-auto thin-scroll space-y-4">
       <!-- Section 1: Zonasi Pemanfaatan Lahan -->
       <div>
@@ -278,42 +285,32 @@
           Filter Alur Sirkular
         </h2>
         <div class="grid grid-cols-2 gap-1.5" id="flow-filter-buttons">
-          <button
-            type="button"
-            data-flow-filter="all"
-            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-slate-800 text-white border-slate-800 shadow-sm"
-          >
-            <span class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-400 via-orange-400 to-red-400 shrink-0"></span>
+          <button type="button" data-flow-filter="all"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-slate-800 text-white border-slate-800 shadow-sm">
+            <span
+              class="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-emerald-400 via-orange-400 to-red-400 shrink-0"></span>
             <span class="truncate">Semua Alur</span>
           </button>
-          <button
-            type="button"
-            data-flow-filter="organik"
-            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-emerald-400"
-          >
+          <button type="button" data-flow-filter="organik"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-emerald-400">
             <span class="w-2.5 h-2.5 rounded-full bg-green-600 shrink-0"></span>
             <span class="truncate">Sampah Organik</span>
           </button>
-          <button
-            type="button"
-            data-flow-filter="produk"
-            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-orange-400"
-          >
+          <button type="button" data-flow-filter="produk"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-orange-400">
             <span class="w-2.5 h-2.5 rounded-full bg-orange-600 shrink-0"></span>
             <span class="truncate">Produk Olahan</span>
           </button>
-          <button
-            type="button"
-            data-flow-filter="anorganik"
-            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-red-400"
-          >
+          <button type="button" data-flow-filter="anorganik"
+            class="flow-filter-btn px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer text-left flex items-center gap-2 bg-white/80 text-slate-700 border-slate-200 hover:border-red-400">
             <span class="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
             <span class="truncate">Sampah Anorganik</span>
           </button>
         </div>
 
         <!-- Legend Arrow Key -->
-        <div class="mt-2.5 p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 space-y-1.5 text-[11px] text-slate-600">
+        <div
+          class="mt-2.5 p-2.5 rounded-xl bg-slate-50/90 border border-slate-200/70 space-y-1.5 text-[11px] text-slate-600">
           <div class="flex items-center gap-2">
             <span class="inline-block w-5 h-1 rounded-full bg-green-600"></span>
             <span>Alur Sampah Organik (1, 2a, 2b)</span>
@@ -331,22 +328,22 @@
 
       <!-- Mini Help Footer -->
       <div class="text-[10.5px] text-slate-500 leading-relaxed bg-blue-50/70 border border-blue-100 rounded-xl p-2.5">
-        <strong class="text-slate-700">Kontrol Navigasi:</strong> Seret kiri untuk putar 360&deg;, scroll/cubit untuk zoom, klik kanan &amp; seret untuk geser posisi.
+        <strong class="text-slate-700">Kontrol Navigasi:</strong> Seret kiri untuk putar 360&deg;, scroll/cubit untuk
+        zoom, klik kanan &amp; seret untuk geser posisi.
       </div>
     </div>
   </aside>
 
   <!-- Interactive Zone Info Card (Bottom-Left) -->
-  <section
-    id="zone-info-card"
+  <section id="zone-info-card"
     class="hidden fixed bottom-20 left-3 sm:bottom-20 sm:left-4 z-25 w-[calc(100vw-1.5rem)] sm:w-96 glass-panel rounded-2xl p-4 pointer-events-auto"
-    aria-live="polite"
-  >
+    aria-live="polite">
     <div class="flex items-start justify-between gap-2">
       <div class="flex items-center gap-2.5 min-w-0">
         <span id="info-dot" class="w-3.5 h-3.5 rounded-full shrink-0 shadow-sm"></span>
         <div class="min-w-0">
-          <span id="info-category" class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 mb-0.5">
+          <span id="info-category"
+            class="inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 mb-0.5">
             Kategori
           </span>
           <h3 id="info-title" class="text-sm sm:text-base font-bold text-slate-900 leading-tight">
@@ -354,13 +351,10 @@
           </h3>
         </div>
       </div>
-      <button
-        id="btn-close-info"
-        type="button"
-        title="Tutup kartu informasi"
-        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-      >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <button id="btn-close-info" type="button" title="Tutup kartu informasi"
+        class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
         </svg>
@@ -392,12 +386,10 @@
 
     <!-- Tombol Khusus Detail Tong Pintar 3D -->
     <div id="info-action-tong" class="hidden mt-3 pt-3 border-t border-slate-200/80">
-      <a
-        href="tong-3d.html"
-        id="btn-detail-tong"
-        class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer no-underline"
-      >
-        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <a href="/3d/tong-3d.html" id="btn-detail-tong"
+        class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 active:scale-[0.98] text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer no-underline">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"
+          stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           <line x1="11" y1="8" x2="11" y2="14"></line>
@@ -409,19 +401,15 @@
   </section>
 
   <!-- Bottom Control Bar -->
-  <nav
-    aria-label="Kontrol Tampilan 3D"
-    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100vw-1.5rem)] pointer-events-auto"
-  >
+  <nav aria-label="Kontrol Tampilan 3D"
+    class="fixed bottom-3 left-1/2 -translate-x-1/2 z-20 max-w-[calc(100vw-1.5rem)] pointer-events-auto">
     <div class="glass-panel rounded-2xl p-1.5 flex items-center gap-1 sm:gap-1.5 overflow-x-auto thin-scroll">
       <!-- Reset Camera -->
-      <button
-        id="btn-reset-cam"
-        type="button"
+      <button id="btn-reset-cam" type="button"
         class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        title="Kembalikan kamera ke sudut isometrik awal"
-      >
-        <svg class="w-4 h-4 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        title="Kembalikan kamera ke sudut isometrik awal">
+        <svg class="w-4 h-4 text-slate-600 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
           <path d="M3 3v5h5"></path>
         </svg>
@@ -431,13 +419,11 @@
       <div class="w-px h-5 bg-slate-200 shrink-0"></div>
 
       <!-- Toggle Zone Labels -->
-      <button
-        id="btn-toggle-zone-labels"
-        type="button"
+      <button id="btn-toggle-zone-labels" type="button"
         class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        title="Tampilkan atau sembunyikan label zona"
-      >
-        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        title="Tampilkan atau sembunyikan label zona">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
           <line x1="7" y1="7" x2="7.01" y2="7"></line>
         </svg>
@@ -445,13 +431,11 @@
       </button>
 
       <!-- Toggle Flow Labels -->
-      <button
-        id="btn-toggle-flow-labels"
-        type="button"
+      <button id="btn-toggle-flow-labels" type="button"
         class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        title="Tampilkan atau sembunyikan label langkah alur"
-      >
-        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        title="Tampilkan atau sembunyikan label langkah alur">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
         </svg>
         <span>Label Alur</span>
@@ -460,30 +444,27 @@
       <div class="w-px h-5 bg-slate-200 shrink-0"></div>
 
       <!-- Pause/Play Flow Animation -->
-      <button
-        id="btn-toggle-anim"
-        type="button"
+      <button id="btn-toggle-anim" type="button"
         class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        title="Jeda atau jalankan animasi partikel alur"
-      >
-        <svg id="icon-anim-pause" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        title="Jeda atau jalankan animasi partikel alur">
+        <svg id="icon-anim-pause" class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="6" y="4" width="4" height="16"></rect>
           <rect x="14" y="4" width="4" height="16"></rect>
         </svg>
-        <svg id="icon-anim-play" class="w-4 h-4 shrink-0 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg id="icon-anim-play" class="w-4 h-4 shrink-0 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="5 3 19 12 5 21 5 3"></polygon>
         </svg>
         <span id="text-anim-btn">Jeda Alur</span>
       </button>
 
       <!-- Auto-Rotate 3D -->
-      <button
-        id="btn-toggle-rotate"
-        type="button"
+      <button id="btn-toggle-rotate" type="button"
         class="ctrl-btn px-2.5 sm:px-3 py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-700 hover:bg-slate-100 active:scale-95 transition-all flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-        title="Aktifkan atau matikan putar otomatis 3D"
-      >
-        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        title="Aktifkan atau matikan putar otomatis 3D">
+        <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
           <path d="M21 3v5h-5"></path>
         </svg>
@@ -2386,4 +2367,5 @@
     });
   </script>
 </body>
+
 </html>
